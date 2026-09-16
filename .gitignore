@@ -260,3 +260,7 @@ pub/
 .devcontainer
 
 .azure
+
+# Nix dev shell state, NuGet package cache, CLI home, local tools (Erik)
+.nupkg/
+.dotnet/
