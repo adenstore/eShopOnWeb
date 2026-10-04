@@ -2,11 +2,13 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.eShopWeb.ApplicationCore.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.eShopWeb.Infrastructure.Data;
 using Microsoft.eShopWeb.Infrastructure.Identity;
 using Microsoft.eShopWeb.Web.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
@@ -49,6 +51,10 @@ public class TestApplication : WebApplicationFactory<IBasketViewModelService>
                 .UseApplicationServiceProvider(sp)
                 .Options;
             });
+
+            // Replace the HTTP client for the Order microservice with an in-memory fake
+            services.RemoveAll<IOrderApiClient>();
+            services.AddSingleton<IOrderApiClient, FakeOrderApiClient>();
         });
 
         return base.CreateHost(builder);
