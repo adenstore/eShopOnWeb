@@ -8,11 +8,19 @@ services:
       dockerfile: src/Web/Dockerfile
     depends_on:
       - "sqlserver"
+      - "eshoporderservice"
   eshoppublicapi:
     image: ${DOCKER_REGISTRY-}eshoppublicapi
     build:
       context: .
       dockerfile: src/PublicApi/Dockerfile
+    depends_on:
+      - "sqlserver"
+  eshoporderservice:
+    image: ${DOCKER_REGISTRY-}eshoporderservice
+    build:
+      context: .
+      dockerfile: OrderService/OrderService/Dockerfile
     depends_on:
       - "sqlserver"
   sqlserver:
