@@ -1,9 +1,7 @@
-﻿using System.Collections.Generic;
-using System.Threading.Tasks;
 using Ardalis.Result;
-using Microsoft.eShopWeb.ApplicationCore.Entities.BasketAggregate;
+using Microsoft.eShopWeb.BasketService.Domain;
 
-namespace Microsoft.eShopWeb.ApplicationCore.Interfaces;
+namespace Microsoft.eShopWeb.BasketService.Interfaces;
 
 public interface IBasketService
 {

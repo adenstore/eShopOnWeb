@@ -1,12 +1,10 @@
-﻿using System.Collections.Generic;
-using System.Threading.Tasks;
 using Ardalis.GuardClauses;
 using Ardalis.Result;
-using Microsoft.eShopWeb.ApplicationCore.Entities.BasketAggregate;
-using Microsoft.eShopWeb.ApplicationCore.Interfaces;
-using Microsoft.eShopWeb.ApplicationCore.Specifications;
+using Microsoft.eShopWeb.BasketService.Domain;
+using Microsoft.eShopWeb.BasketService.Interfaces;
+using Microsoft.eShopWeb.BasketService.Specifications;
 
-namespace Microsoft.eShopWeb.ApplicationCore.Services;
+namespace Microsoft.eShopWeb.BasketService.Services;
 
 public class BasketService : IBasketService
 {

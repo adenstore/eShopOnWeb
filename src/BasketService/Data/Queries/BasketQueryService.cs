@@ -1,15 +1,13 @@
-﻿using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.eShopWeb.ApplicationCore.Interfaces;
+using Microsoft.eShopWeb.BasketService.Interfaces;
 
-namespace Microsoft.eShopWeb.Infrastructure.Data.Queries;
+namespace Microsoft.eShopWeb.BasketService.Data.Queries;
 
 public class BasketQueryService : IBasketQueryService
 {
-    private readonly CatalogContext _dbContext;
+    private readonly BasketDbContext _dbContext;
 
-    public BasketQueryService(CatalogContext dbContext)
+    public BasketQueryService(BasketDbContext dbContext)
     {
         _dbContext = dbContext;
     }
