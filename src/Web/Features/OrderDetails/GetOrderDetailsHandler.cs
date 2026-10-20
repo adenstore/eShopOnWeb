@@ -1,25 +1,22 @@
-﻿using MediatR;
-using Microsoft.eShopWeb.ApplicationCore.Entities.OrderAggregate;
+using MediatR;
 using Microsoft.eShopWeb.ApplicationCore.Interfaces;
-using Microsoft.eShopWeb.ApplicationCore.Specifications;
 using Microsoft.eShopWeb.Web.ViewModels;
 
 namespace Microsoft.eShopWeb.Web.Features.OrderDetails;
 
 public class GetOrderDetailsHandler : IRequestHandler<GetOrderDetails, OrderDetailViewModel?>
 {
-    private readonly IReadRepository<Order> _orderRepository;
+    private readonly IOrderApiClient _orderApiClient;
 
-    public GetOrderDetailsHandler(IReadRepository<Order> orderRepository)
+    public GetOrderDetailsHandler(IOrderApiClient orderApiClient)
     {
-        _orderRepository = orderRepository;
+        _orderApiClient = orderApiClient;
     }
 
     public async Task<OrderDetailViewModel?> Handle(GetOrderDetails request,
         CancellationToken cancellationToken)
     {
-        var spec = new OrderWithItemsByIdSpec(request.OrderId);
-        var order = await _orderRepository.FirstOrDefaultAsync(spec, cancellationToken);
+        var order = await _orderApiClient.GetOrderAsync(request.UserName, request.OrderId, cancellationToken);
 
         if (order == null)
         {
@@ -29,17 +26,17 @@ public class GetOrderDetailsHandler : IRequestHandler<GetOrderDetails, OrderDeta
         return new OrderDetailViewModel
         {
             OrderDate = order.OrderDate,
-            OrderItems = order.OrderItems.Select(oi => new OrderItemViewModel
+            OrderItems = order.Items.Select(oi => new OrderItemViewModel
             {
-                PictureUrl = oi.ItemOrdered.PictureUri,
-                ProductId = oi.ItemOrdered.CatalogItemId,
-                ProductName = oi.ItemOrdered.ProductName,
+                PictureUrl = oi.PictureUri,
+                ProductId = oi.CatalogItemId,
+                ProductName = oi.ProductName,
                 UnitPrice = oi.UnitPrice,
                 Units = oi.Units
             }).ToList(),
             OrderNumber = order.Id,
             ShippingAddress = order.ShipToAddress,
-            Total = order.Total()
+            Total = order.Total
         };
     }
 }

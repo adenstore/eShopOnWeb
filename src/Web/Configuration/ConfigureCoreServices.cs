@@ -16,7 +16,14 @@ public static class ConfigureCoreServices
         services.AddScoped(typeof(IRepository<>), typeof(EfRepository<>));
 
         services.AddScoped<IBasketService, BasketService>();
-        services.AddScoped<IOrderService, OrderService>();
+        services.AddScoped<IOrderService, OrderCheckoutService>();
+
+        // Orders live in their own microservice (OrderService/OrderService); the Web app calls it over HTTP.
+        services.AddHttpClient<IOrderApiClient, OrderApiClient>(client =>
+        {
+            var orderServiceBaseUrl = configuration["OrderServiceBaseUrl"] ?? "http://localhost:5300/";
+            client.BaseAddress = new Uri(orderServiceBaseUrl);
+        });
         services.AddScoped<IBasketQueryService, BasketQueryService>();
 
         var catalogSettings = configuration.Get<CatalogSettings>() ?? new CatalogSettings();
