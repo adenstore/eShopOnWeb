@@ -18,7 +18,7 @@ public static class ConfigureCoreServices
         services.AddScoped<IBasketService, BasketService>();
         services.AddScoped<IOrderService, OrderCheckoutService>();
 
-        // Orders live in their own microservice (src/OrderService); the Web app calls it over HTTP.
+        // Orders live in their own microservice (OrderService/OrderService); the Web app calls it over HTTP.
         services.AddHttpClient<IOrderApiClient, OrderApiClient>(client =>
         {
             var orderServiceBaseUrl = configuration["OrderServiceBaseUrl"] ?? "http://localhost:5300/";

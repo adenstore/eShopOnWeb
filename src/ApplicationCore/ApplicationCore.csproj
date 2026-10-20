@@ -15,7 +15,7 @@
 
 	<ItemGroup>
 	  <ProjectReference Include="..\BlazorShared\BlazorShared.csproj" />
-	  <ProjectReference Include="..\OrderService.Contracts\OrderService.Contracts.csproj" />
+	  <ProjectReference Include="..\..\OrderService\OrderService.Contracts\OrderService.Contracts.csproj" />
 	</ItemGroup>
 
 </Project>

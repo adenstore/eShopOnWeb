@@ -20,7 +20,7 @@ services:
     image: ${DOCKER_REGISTRY-}eshoporderservice
     build:
       context: .
-      dockerfile: src/OrderService/Dockerfile
+      dockerfile: OrderService/OrderService/Dockerfile
     depends_on:
       - "sqlserver"
   sqlserver:

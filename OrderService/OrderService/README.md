@@ -32,7 +32,7 @@ Swagger UI: `http://localhost:5300/swagger`
 
 ```bash
 # Uden SQL Server (in-memory database)
-UseOnlyInMemoryDatabase=true dotnet run --project src/OrderService --urls http://localhost:5300
+UseOnlyInMemoryDatabase=true dotnet run --project OrderService/OrderService --urls http://localhost:5300
 
 # Web finder servicen via "OrderServiceBaseUrl" i src/Web/appsettings.json (default http://localhost:5300/)
 dotnet run --project src/Web

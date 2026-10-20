@@ -8,10 +8,10 @@ EXPOSE 443
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /app
 COPY . .
-#COPY ["src/OrderService/OrderService.csproj", "./OrderService/"]
+#COPY ["OrderService/OrderService/OrderService.csproj", "./OrderService/"]
 #RUN dotnet restore "./OrderService/OrderService.csproj"
 #COPY . .
-WORKDIR "/app/src/OrderService"
+WORKDIR "/app/OrderService/OrderService"
 RUN dotnet restore
 
 RUN dotnet build "./OrderService.csproj" -c Release -o /app/build
