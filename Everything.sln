@@ -34,6 +34,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BasketService", "src\BasketService\BasketService.csproj", "{2B837397-2C12-4FA0-87B9-3AB76E8D455A}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BasketServiceTests", "tests\BasketServiceTests\BasketServiceTests.csproj", "{89133982-0014-4707-8AC1-034EE38F28C5}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -84,6 +86,10 @@ Global
 		{2B837397-2C12-4FA0-87B9-3AB76E8D455A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2B837397-2C12-4FA0-87B9-3AB76E8D455A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2B837397-2C12-4FA0-87B9-3AB76E8D455A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{89133982-0014-4707-8AC1-034EE38F28C5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{89133982-0014-4707-8AC1-034EE38F28C5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{89133982-0014-4707-8AC1-034EE38F28C5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{89133982-0014-4707-8AC1-034EE38F28C5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -100,5 +106,6 @@ Global
 		{698594AE-78D3-429F-B5CC-3A6F6BCE397A} = {BAA5312D-B54C-42D6-A3B9-504DD12F8250}
 		{EAD6CF0B-2979-462C-BBB9-AF723B1EB570} = {BAA5312D-B54C-42D6-A3B9-504DD12F8250}
 		{2B837397-2C12-4FA0-87B9-3AB76E8D455A} = {8FF16BDB-352E-42A2-A25F-0B5BC3A17FD7}
+		{89133982-0014-4707-8AC1-034EE38F28C5} = {BAA5312D-B54C-42D6-A3B9-504DD12F8250}
 	EndGlobalSection
 EndGlobal
