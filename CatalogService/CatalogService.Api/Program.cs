@@ -56,6 +56,20 @@ builder.Services.AddAuthentication(config =>
 });
 builder.Services.AddAuthorization();
 
+// BlazorAdmin runs in the browser on the Web app's address and calls this service through the gateway.
+const string CORS_POLICY = "CorsPolicy";
+var webBase = builder.Configuration["baseUrls:webBase"] ?? "https://localhost:5001/";
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(name: CORS_POLICY,
+        corsPolicyBuilder =>
+        {
+            corsPolicyBuilder.WithOrigins(webBase.Replace("host.docker.internal", "localhost").TrimEnd('/'));
+            corsPolicyBuilder.AllowAnyMethod();
+            corsPolicyBuilder.AllowAnyHeader();
+        });
+});
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddHealthChecks();
@@ -69,6 +83,8 @@ using (var scope = app.Services.CreateScope())
 }
 
 app.UseMiddleware<ExceptionMiddleware>();
+
+app.UseCors(CORS_POLICY);
 
 app.UseAuthentication();
 app.UseAuthorization();

@@ -31,6 +31,14 @@ services:
       dockerfile: CatalogService/CatalogService.Api/Dockerfile
     depends_on:
       - "sqlserver"
+  eshopapigateway:
+    image: ${DOCKER_REGISTRY-}eshopapigateway
+    build:
+      context: .
+      dockerfile: src/ApiGateway/Dockerfile
+    depends_on:
+      - "eshoppublicapi"
+      - "eshopcatalogservice"
   sqlserver:
     image: mcr.microsoft.com/azure-sql-edge
     ports:
