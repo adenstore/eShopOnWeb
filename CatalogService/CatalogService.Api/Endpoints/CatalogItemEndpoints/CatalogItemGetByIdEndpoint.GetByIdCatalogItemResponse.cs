@@ -1,4 +1,5 @@
 ﻿using System;
+using Microsoft.eShopWeb.CatalogService.Contracts;
 
 namespace Microsoft.eShopWeb.CatalogService.Api.Endpoints.CatalogItemEndpoints;
 

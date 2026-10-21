@@ -9,11 +9,16 @@ namespace Microsoft.eShopWeb.Web.Services;
 
 public class CachedCatalogViewModelService : ICatalogViewModelService
 {
+    /// <summary>
+    /// DI key of the uncached service this class wraps: either the monolith's database or CatalogService.
+    /// </summary>
+    public const string UncachedServiceKey = "uncached";
+
     private readonly IMemoryCache _cache;
-    private readonly CatalogViewModelService _catalogViewModelService;
+    private readonly ICatalogViewModelService _catalogViewModelService;
 
     public CachedCatalogViewModelService(IMemoryCache cache,
-        CatalogViewModelService catalogViewModelService)
+        [FromKeyedServices(UncachedServiceKey)] ICatalogViewModelService catalogViewModelService)
     {
         _cache = cache;
         _catalogViewModelService = catalogViewModelService;

@@ -65,6 +65,9 @@ public class TestApplication : WebApplicationFactory<IBasketViewModelService>
             services.RemoveAll<IBasketQueryService>();
             services.AddScoped<IBasketService, ApplicationCore.Services.BasketService>();
             services.AddScoped<IBasketQueryService, Infrastructure.Data.Queries.BasketQueryService>();
+            // Replace the HTTP client for the Catalog microservice with an in-memory fake
+            services.RemoveAll<ICatalogApiClient>();
+            services.AddSingleton<ICatalogApiClient, FakeCatalogApiClient>();
         });
 
         return base.CreateHost(builder);
