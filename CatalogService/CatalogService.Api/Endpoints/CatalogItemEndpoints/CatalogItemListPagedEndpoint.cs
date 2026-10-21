@@ -9,6 +9,7 @@ using Microsoft.eShopWeb.CatalogService.Domain.Entities;
 using Microsoft.eShopWeb.CatalogService.Domain.Interfaces;
 using Microsoft.eShopWeb.CatalogService.Domain.Specifications;
 using MinimalApi.Endpoint;
+using Microsoft.eShopWeb.CatalogService.Contracts;
 
 namespace Microsoft.eShopWeb.CatalogService.Api.Endpoints.CatalogItemEndpoints;
 
@@ -39,11 +40,11 @@ public class CatalogItemListPagedEndpoint : IEndpoint<IResult, ListPagedCatalogI
 
     public async Task<IResult> HandleAsync(ListPagedCatalogItemRequest request, IRepository<CatalogItem> itemRepository)
     {
-        await Task.Delay(1000);
         var response = new ListPagedCatalogItemResponse(request.CorrelationId());
 
         var filterSpec = new CatalogFilterSpecification(request.CatalogBrandId, request.CatalogTypeId);
         int totalItems = await itemRepository.CountAsync(filterSpec);
+        response.TotalItems = totalItems;
 
         var pagedSpec = new CatalogFilterPaginatedSpecification(
             skip: request.PageIndex * request.PageSize,

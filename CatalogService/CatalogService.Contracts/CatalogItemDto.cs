@@ -1,4 +1,4 @@
-﻿namespace Microsoft.eShopWeb.CatalogService.Api.Endpoints.CatalogItemEndpoints;
+﻿namespace Microsoft.eShopWeb.CatalogService.Contracts;
 
 public class CatalogItemDto
 {

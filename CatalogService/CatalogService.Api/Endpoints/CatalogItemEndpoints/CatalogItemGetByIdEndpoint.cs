@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Routing;
 using Microsoft.eShopWeb.CatalogService.Domain.Entities;
 using Microsoft.eShopWeb.CatalogService.Domain.Interfaces;
 using MinimalApi.Endpoint;
+using Microsoft.eShopWeb.CatalogService.Contracts;
 
 namespace Microsoft.eShopWeb.CatalogService.Api.Endpoints.CatalogItemEndpoints;
 

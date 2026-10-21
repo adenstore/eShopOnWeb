@@ -55,6 +55,10 @@ public class TestApplication : WebApplicationFactory<IBasketViewModelService>
             // Replace the HTTP client for the Order microservice with an in-memory fake
             services.RemoveAll<IOrderApiClient>();
             services.AddSingleton<IOrderApiClient, FakeOrderApiClient>();
+
+            // Replace the HTTP client for the Catalog microservice with an in-memory fake
+            services.RemoveAll<ICatalogApiClient>();
+            services.AddSingleton<ICatalogApiClient, FakeCatalogApiClient>();
         });
 
         return base.CreateHost(builder);

@@ -24,3 +24,9 @@ services:
      - ASPNETCORE_URLS=http://+:8080
    ports:
      - "5300:8080"
+ eshopcatalogservice:
+   environment:
+     - ASPNETCORE_ENVIRONMENT=Docker
+     - ASPNETCORE_URLS=http://+:8080
+   ports:
+     - "5400:8080"
