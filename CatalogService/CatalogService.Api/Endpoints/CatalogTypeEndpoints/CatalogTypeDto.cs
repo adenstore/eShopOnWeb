@@ -1,4 +1,4 @@
-﻿namespace Microsoft.eShopWeb.PublicApi.CatalogTypeEndpoints;
+﻿namespace Microsoft.eShopWeb.CatalogService.Api.Endpoints.CatalogTypeEndpoints;
 
 public class CatalogTypeDto
 {

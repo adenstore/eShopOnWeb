@@ -4,13 +4,14 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
-using Microsoft.eShopWeb.ApplicationCore.Entities;
-using Microsoft.eShopWeb.ApplicationCore.Exceptions;
-using Microsoft.eShopWeb.ApplicationCore.Interfaces;
-using Microsoft.eShopWeb.ApplicationCore.Specifications;
+using Microsoft.eShopWeb.CatalogService.Api.Authorization;
+using Microsoft.eShopWeb.CatalogService.Domain.Entities;
+using Microsoft.eShopWeb.CatalogService.Domain.Exceptions;
+using Microsoft.eShopWeb.CatalogService.Domain.Interfaces;
+using Microsoft.eShopWeb.CatalogService.Domain.Specifications;
 using MinimalApi.Endpoint;
 
-namespace Microsoft.eShopWeb.PublicApi.CatalogItemEndpoints;
+namespace Microsoft.eShopWeb.CatalogService.Api.Endpoints.CatalogItemEndpoints;
 
 /// <summary>
 /// Creates a new Catalog Item
@@ -27,7 +28,7 @@ public class CreateCatalogItemEndpoint : IEndpoint<IResult, CreateCatalogItemReq
     public void AddRoute(IEndpointRouteBuilder app)
     {
         app.MapPost("api/catalog-items",
-            [Authorize(Roles = BlazorShared.Authorization.Constants.Roles.ADMINISTRATORS, AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)] async
+            [Authorize(Roles = AuthorizationConstants.Roles.ADMINISTRATORS, AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)] async
             (CreateCatalogItemRequest request, IRepository<CatalogItem> itemRepository) =>
             {
                 return await HandleAsync(request, itemRepository);

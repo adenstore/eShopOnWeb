@@ -1,8 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using Microsoft.eShopWeb.ApplicationCore.Entities;
+using Microsoft.eShopWeb.CatalogService.Domain.Entities;
 
-namespace Microsoft.eShopWeb.Infrastructure.Data.Config;
+namespace Microsoft.eShopWeb.CatalogService.Infrastructure.Data.Config;
 
 public class CatalogTypeConfiguration : IEntityTypeConfiguration<CatalogType>
 {

@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace Microsoft.eShopWeb.PublicApi.CatalogItemEndpoints;
+namespace Microsoft.eShopWeb.CatalogService.Api.Endpoints.CatalogItemEndpoints;
 
 public class UpdateCatalogItemRequest : BaseRequest
 {

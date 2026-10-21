@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Linq;
 using Ardalis.Specification;
-using Microsoft.eShopWeb.ApplicationCore.Entities;
+using Microsoft.eShopWeb.CatalogService.Domain.Entities;
 
-namespace Microsoft.eShopWeb.ApplicationCore.Specifications;
+namespace Microsoft.eShopWeb.CatalogService.Domain.Specifications;
 
 public class CatalogItemsSpecification : Specification<CatalogItem>
 {

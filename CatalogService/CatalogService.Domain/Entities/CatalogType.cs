@@ -1,6 +1,6 @@
-﻿using Microsoft.eShopWeb.ApplicationCore.Interfaces;
+﻿using Microsoft.eShopWeb.CatalogService.Domain.Interfaces;
 
-namespace Microsoft.eShopWeb.ApplicationCore.Entities;
+namespace Microsoft.eShopWeb.CatalogService.Domain.Entities;
 
 public class CatalogType : BaseEntity, IAggregateRoot
 {

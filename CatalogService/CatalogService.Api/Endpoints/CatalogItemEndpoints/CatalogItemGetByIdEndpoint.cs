@@ -2,11 +2,11 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
-using Microsoft.eShopWeb.ApplicationCore.Entities;
-using Microsoft.eShopWeb.ApplicationCore.Interfaces;
+using Microsoft.eShopWeb.CatalogService.Domain.Entities;
+using Microsoft.eShopWeb.CatalogService.Domain.Interfaces;
 using MinimalApi.Endpoint;
 
-namespace Microsoft.eShopWeb.PublicApi.CatalogItemEndpoints;
+namespace Microsoft.eShopWeb.CatalogService.Api.Endpoints.CatalogItemEndpoints;
 
 /// <summary>
 /// Get a Catalog Item by Id
