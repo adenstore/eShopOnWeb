@@ -1,13 +1,49 @@
 {
   "Routes": [
     {
-      "UpstreamPathTemplate": "/api/catalog/{everything}",
-      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ],
-      "DownstreamPathTemplate": "/api/{everything}",
+      "UpstreamPathTemplate": "/api/catalog-items",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "OPTIONS" ],
+      "DownstreamPathTemplate": "/api/catalog-items",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
-          "Host": "catalogservice",
+          "Host": "eshopcatalogservice",
+          "Port": 8080
+        }
+      ]
+    },
+    {
+      "UpstreamPathTemplate": "/api/catalog-items/{id}",
+      "UpstreamHttpMethod": [ "GET", "DELETE", "OPTIONS" ],
+      "DownstreamPathTemplate": "/api/catalog-items/{id}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "eshopcatalogservice",
+          "Port": 8080
+        }
+      ]
+    },
+    {
+      "UpstreamPathTemplate": "/api/catalog-brands",
+      "UpstreamHttpMethod": [ "GET", "OPTIONS" ],
+      "DownstreamPathTemplate": "/api/catalog-brands",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "eshopcatalogservice",
+          "Port": 8080
+        }
+      ]
+    },
+    {
+      "UpstreamPathTemplate": "/api/catalog-types",
+      "UpstreamHttpMethod": [ "GET", "OPTIONS" ],
+      "DownstreamPathTemplate": "/api/catalog-types",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "eshopcatalogservice",
           "Port": 8080
         }
       ]
@@ -47,6 +83,19 @@
           "Port": 8080
         }
       ]
+    },
+    {
+      "UpstreamPathTemplate": "/api/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE", "OPTIONS" ],
+      "DownstreamPathTemplate": "/api/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "eshoppublicapi",
+          "Port": 8080
+        }
+      ],
+      "Priority": 0
     }
   ],
   "GlobalConfiguration": {

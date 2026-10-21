@@ -1,4 +1,4 @@
-﻿namespace Microsoft.eShopWeb.CatalogService.Api.Endpoints.CatalogBrandEndpoints;
+﻿namespace Microsoft.eShopWeb.CatalogService.Contracts;
 
 public class CatalogBrandDto
 {

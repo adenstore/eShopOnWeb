@@ -10,6 +10,7 @@ using Microsoft.eShopWeb.CatalogService.Domain.Exceptions;
 using Microsoft.eShopWeb.CatalogService.Domain.Interfaces;
 using Microsoft.eShopWeb.CatalogService.Domain.Specifications;
 using MinimalApi.Endpoint;
+using Microsoft.eShopWeb.CatalogService.Contracts;
 
 namespace Microsoft.eShopWeb.CatalogService.Api.Endpoints.CatalogItemEndpoints;
 

@@ -9,6 +9,7 @@ services:
     depends_on:
       - "sqlserver"
       - "eshoporderservice"
+      - "eshopcatalogservice"
   eshoppublicapi:
     image: ${DOCKER_REGISTRY-}eshoppublicapi
     build:
@@ -23,6 +24,21 @@ services:
       dockerfile: OrderService/OrderService/Dockerfile
     depends_on:
       - "sqlserver"
+  eshopcatalogservice:
+    image: ${DOCKER_REGISTRY-}eshopcatalogservice
+    build:
+      context: .
+      dockerfile: CatalogService/CatalogService.Api/Dockerfile
+    depends_on:
+      - "sqlserver"
+  eshopapigateway:
+    image: ${DOCKER_REGISTRY-}eshopapigateway
+    build:
+      context: .
+      dockerfile: src/ApiGateway/Dockerfile
+    depends_on:
+      - "eshoppublicapi"
+      - "eshopcatalogservice"
   sqlserver:
     image: mcr.microsoft.com/azure-sql-edge
     ports:

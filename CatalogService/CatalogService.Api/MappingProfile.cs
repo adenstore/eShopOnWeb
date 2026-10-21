@@ -1,8 +1,6 @@
 using AutoMapper;
 using Microsoft.eShopWeb.CatalogService.Domain.Entities;
-using Microsoft.eShopWeb.CatalogService.Api.Endpoints.CatalogBrandEndpoints;
-using Microsoft.eShopWeb.CatalogService.Api.Endpoints.CatalogItemEndpoints;
-using Microsoft.eShopWeb.CatalogService.Api.Endpoints.CatalogTypeEndpoints;
+using Microsoft.eShopWeb.CatalogService.Contracts;
 
 namespace Microsoft.eShopWeb.CatalogService.Api;
 
