@@ -20,6 +20,20 @@ public class BasketService : IBasketService
         _logger = logger;
     }
 
+    public async Task<Basket> GetOrCreateBasketAsync(string buyerId)
+    {
+        var basketSpec = new BasketWithItemsSpecification(buyerId);
+        var basket = await _basketRepository.FirstOrDefaultAsync(basketSpec);
+
+        if (basket == null)
+        {
+            basket = new Basket(buyerId);
+            await _basketRepository.AddAsync(basket);
+        }
+
+        return basket;
+    }
+
     public async Task<Basket> AddItemToBasket(string username, int catalogItemId, decimal price, int quantity = 1)
     {
         var basketSpec = new BasketWithItemsSpecification(username);

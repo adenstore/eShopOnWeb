@@ -9,17 +9,17 @@ namespace Microsoft.eShopWeb.Web.Services;
 
 public class BasketViewModelService : IBasketViewModelService
 {
-    private readonly IRepository<Basket> _basketRepository;
+    private readonly IBasketService _basketService;
     private readonly IUriComposer _uriComposer;
     private readonly IBasketQueryService _basketQueryService;
     private readonly IRepository<CatalogItem> _itemRepository;
 
-    public BasketViewModelService(IRepository<Basket> basketRepository,
+    public BasketViewModelService(IBasketService basketService,
         IRepository<CatalogItem> itemRepository,
         IUriComposer uriComposer,
         IBasketQueryService basketQueryService)
     {
-        _basketRepository = basketRepository;
+        _basketService = basketService;
         _uriComposer = uriComposer;
         _basketQueryService = basketQueryService;
         _itemRepository = itemRepository;
@@ -27,27 +27,9 @@ public class BasketViewModelService : IBasketViewModelService
 
     public async Task<BasketViewModel> GetOrCreateBasketForUser(string userName)
     {
-        var basketSpec = new BasketWithItemsSpecification(userName);
-        var basket = (await _basketRepository.FirstOrDefaultAsync(basketSpec));
+        Basket basket = await _basketService.GetOrCreateBasketAsync(userName);
 
-        if (basket == null)
-        {
-            return await CreateBasketForUser(userName);
-        }
-        var viewModel = await Map(basket);
-        return viewModel;
-    }
-
-    private async Task<BasketViewModel> CreateBasketForUser(string userId)
-    {
-        var basket = new Basket(userId);
-        await _basketRepository.AddAsync(basket);
-
-        return new BasketViewModel()
-        {
-            BuyerId = basket.BuyerId,
-            Id = basket.Id,
-        };
+        return await Map(basket);
     }
 
     private async Task<List<BasketItemViewModel>> GetBasketItems(IReadOnlyCollection<BasketItem> basketItems)
