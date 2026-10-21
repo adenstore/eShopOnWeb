@@ -1,5 +1,5 @@
-﻿using Microsoft.eShopWeb.ApplicationCore.Entities;
-using Microsoft.eShopWeb.ApplicationCore.Entities.BasketAggregate;
+﻿using Microsoft.eShopWeb.ApplicationCore.Dtos;
+using Microsoft.eShopWeb.ApplicationCore.Entities;
 using Microsoft.eShopWeb.ApplicationCore.Interfaces;
 using Microsoft.eShopWeb.ApplicationCore.Specifications;
 using Microsoft.eShopWeb.Web.Interfaces;
@@ -27,12 +27,12 @@ public class BasketViewModelService : IBasketViewModelService
 
     public async Task<BasketViewModel> GetOrCreateBasketForUser(string userName)
     {
-        Basket basket = await _basketService.GetOrCreateBasketAsync(userName);
+        var basket = await _basketService.GetOrCreateBasketAsync(userName);
 
         return await Map(basket);
     }
 
-    private async Task<List<BasketItemViewModel>> GetBasketItems(IReadOnlyCollection<BasketItem> basketItems)
+    private async Task<List<BasketItemViewModel>> GetBasketItems(IReadOnlyCollection<BasketItemDto> basketItems)
     {
         var catalogItemsSpecification = new CatalogItemsSpecification(basketItems.Select(b => b.CatalogItemId).ToArray());
         var catalogItems = await _itemRepository.ListAsync(catalogItemsSpecification);
@@ -56,7 +56,7 @@ public class BasketViewModelService : IBasketViewModelService
         return items;
     }
 
-    public async Task<BasketViewModel> Map(Basket basket)
+    public async Task<BasketViewModel> Map(BasketDto basket)
     {
         return new BasketViewModel()
         {

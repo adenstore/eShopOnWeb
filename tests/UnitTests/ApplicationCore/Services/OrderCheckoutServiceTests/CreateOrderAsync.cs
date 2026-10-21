@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.eShopWeb.ApplicationCore.Dtos;
 using Microsoft.eShopWeb.ApplicationCore.Entities;
 using Microsoft.eShopWeb.ApplicationCore.Entities.BasketAggregate;
 using Microsoft.eShopWeb.ApplicationCore.Exceptions;
@@ -15,21 +16,21 @@ namespace Microsoft.eShopWeb.UnitTests.ApplicationCore.Services.OrderCheckoutSer
 
 public class CreateOrderAsync
 {
-    private readonly IRepository<Basket> _mockBasketRepo = Substitute.For<IRepository<Basket>>();
+    private readonly IBasketService _mockBasketService = Substitute.For<IBasketService>();
     private readonly IRepository<CatalogItem> _mockItemRepo = Substitute.For<IRepository<CatalogItem>>();
     private readonly IOrderApiClient _mockOrderApiClient = Substitute.For<IOrderApiClient>();
     private readonly IUriComposer _uriComposer = new UriComposer(new CatalogSettings { CatalogBaseUrl = "http://test" });
     private readonly AddressDto _address = new("123 Main St.", "Kent", "OH", "United States", "44240");
 
     private OrderCheckoutService CreateService() =>
-        new(_mockBasketRepo, _mockItemRepo, _mockOrderApiClient, _uriComposer);
+        new(_mockBasketService, _mockItemRepo, _mockOrderApiClient, _uriComposer);
 
     [Fact]
     public async Task SendsBasketSnapshotToOrderService()
     {
         var basket = new Basket("buyer-1");
         basket.AddItem(7, 12.5m, 3);
-        _mockBasketRepo.FirstOrDefaultAsync(Arg.Any<BasketWithItemsSpecification>(), default).Returns(basket);
+        _mockBasketService.GetBasketAsync(Arg.Any<int>()).Returns(BasketDto.FromBasket(basket));
         _mockItemRepo.ListAsync(Arg.Any<CatalogItemsSpecification>(), default)
             .Returns(new List<CatalogItem> { new TestCatalogItem(7, "Mug", "http://catalogbaseurltobereplaced/images/products/7.png") });
         _mockOrderApiClient.CreateOrderAsync(Arg.Any<CreateOrderRequest>(), Arg.Any<CancellationToken>()).Returns(99);
@@ -53,7 +54,7 @@ public class CreateOrderAsync
     [Fact]
     public async Task ThrowsAndSendsNothingForEmptyBasket()
     {
-        _mockBasketRepo.FirstOrDefaultAsync(Arg.Any<BasketWithItemsSpecification>(), default).Returns(new Basket("buyer-1"));
+        _mockBasketService.GetBasketAsync(Arg.Any<int>()).Returns(BasketDto.FromBasket(new Basket("buyer-1")));
 
         await Assert.ThrowsAsync<EmptyBasketOnCheckoutException>(() => CreateService().CreateOrderAsync(1, _address));
 

@@ -32,6 +32,13 @@ public class BasketService : IBasketService
         return basket;
     }
 
+    public async Task<Basket?> GetBasketAsync(int basketId)
+    {
+        var basketSpec = new BasketWithItemsSpecification(basketId);
+
+        return await _basketRepository.FirstOrDefaultAsync(basketSpec);
+    }
+
     public async Task<Basket> AddItemToBasket(string username, int catalogItemId, decimal price, int quantity = 1)
     {
         var basket = await GetOrCreateBasketAsync(username);
