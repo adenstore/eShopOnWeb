@@ -1,8 +1,7 @@
-using System.Linq;
+﻿using System.Linq;
 using System.Threading.Tasks;
 using Ardalis.GuardClauses;
 using Microsoft.eShopWeb.ApplicationCore.Entities;
-using Microsoft.eShopWeb.ApplicationCore.Entities.BasketAggregate;
 using Microsoft.eShopWeb.ApplicationCore.Interfaces;
 using Microsoft.eShopWeb.ApplicationCore.Specifications;
 using Microsoft.eShopWeb.OrderService.Contracts;
@@ -18,24 +17,23 @@ public class OrderCheckoutService : IOrderService
 {
     private readonly IOrderApiClient _orderApiClient;
     private readonly IUriComposer _uriComposer;
-    private readonly IRepository<Basket> _basketRepository;
+    private readonly IBasketService _basketService;
     private readonly IRepository<CatalogItem> _itemRepository;
 
-    public OrderCheckoutService(IRepository<Basket> basketRepository,
+    public OrderCheckoutService(IBasketService basketService,
         IRepository<CatalogItem> itemRepository,
         IOrderApiClient orderApiClient,
         IUriComposer uriComposer)
     {
         _orderApiClient = orderApiClient;
         _uriComposer = uriComposer;
-        _basketRepository = basketRepository;
+        _basketService = basketService;
         _itemRepository = itemRepository;
     }
 
     public async Task<int> CreateOrderAsync(int basketId, AddressDto shippingAddress)
     {
-        var basketSpec = new BasketWithItemsSpecification(basketId);
-        var basket = await _basketRepository.FirstOrDefaultAsync(basketSpec);
+        var basket = await _basketService.GetBasketAsync(basketId);
 
         Guard.Against.Null(basket, nameof(basket));
         Guard.Against.EmptyBasketOnCheckout(basket.Items);

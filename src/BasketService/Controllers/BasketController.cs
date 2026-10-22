@@ -28,6 +28,19 @@ public class BasketController : ControllerBase
         return Ok(BasketDto.FromBasket(basket));
     }
 
+    [HttpGet("{basketId:int}")]
+    [ProducesResponseType<BasketDto>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<BasketDto>> Get(int basketId)
+    {
+        var basket = await _basketService.GetBasketAsync(basketId);
+
+        if (basket is null)
+            return NotFound();
+
+        return Ok(BasketDto.FromBasket(basket));
+    }
+
     [HttpPost("{buyerId}/items")]
     [ProducesResponseType<BasketDto>(StatusCodes.Status200OK)]
     public async Task<ActionResult<BasketDto>> AddItem(string buyerId, AddBasketItemRequest request)

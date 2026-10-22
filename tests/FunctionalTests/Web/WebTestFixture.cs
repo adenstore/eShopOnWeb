@@ -2,7 +2,9 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.eShopWeb.ApplicationCore;
 using Microsoft.eShopWeb.ApplicationCore.Interfaces;
+using Microsoft.eShopWeb.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.eShopWeb.Infrastructure.Data;
 using Microsoft.eShopWeb.Infrastructure.Identity;
@@ -56,6 +58,13 @@ public class TestApplication : WebApplicationFactory<IBasketViewModelService>
             services.RemoveAll<IOrderApiClient>();
             services.AddSingleton<IOrderApiClient, FakeOrderApiClient>();
 
+            // Basket is a microservice in production, reached over HTTP by BasketApiClient.
+            // Run the in-process implementation here instead, against the in-memory database
+            // above, so these tests need no live service and still exercise real basket rules.
+            services.RemoveAll<IBasketService>();
+            services.RemoveAll<IBasketQueryService>();
+            services.AddScoped<IBasketService, ApplicationCore.Services.BasketService>();
+            services.AddScoped<IBasketQueryService, Infrastructure.Data.Queries.BasketQueryService>();
             // Replace the HTTP client for the Catalog microservice with an in-memory fake
             services.RemoveAll<ICatalogApiClient>();
             services.AddSingleton<ICatalogApiClient, FakeCatalogApiClient>();
