@@ -10,6 +10,7 @@ services:
       - "sqlserver"
       - "eshoporderservice"
       - "eshopcatalogservice"
+      - "rabbitmq"
   eshoppublicapi:
     image: ${DOCKER_REGISTRY-}eshoppublicapi
     build:

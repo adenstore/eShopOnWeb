@@ -68,6 +68,13 @@ public class TestApplication : WebApplicationFactory<IBasketViewModelService>
             // Replace the HTTP client for the Catalog microservice with an in-memory fake
             services.RemoveAll<ICatalogApiClient>();
             services.AddSingleton<ICatalogApiClient, FakeCatalogApiClient>();
+
+            // Don't listen to RabbitMQ in tests: it would consume (and lose) catalog events meant for a running Web app
+            var catalogListener = services.SingleOrDefault(d => d.ImplementationType == typeof(Microsoft.eShopWeb.Web.Messaging.CatalogEventsListener));
+            if (catalogListener is not null)
+            {
+                services.Remove(catalogListener);
+            }
         });
 
         return base.CreateHost(builder);
