@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.eShopWeb.CatalogService.Infrastructure.Data;
+using Microsoft.eShopWeb.CatalogService.Infrastructure.Messaging;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -19,6 +20,11 @@ public class CatalogServiceApplication : WebApplicationFactory<Program>
     // so a unique name keeps one test class's changes out of another's.
     private readonly string _databaseName = $"CatalogTests-{Guid.NewGuid()}";
 
+    /// <summary>
+    /// Events the API published while the tests ran (instead of sending them to RabbitMQ).
+    /// </summary>
+    public FakeCatalogEventPublisher Events { get; } = new();
+
     protected override IHost CreateHost(IHostBuilder builder)
     {
         builder.UseEnvironment("Development");
@@ -31,6 +37,9 @@ public class CatalogServiceApplication : WebApplicationFactory<Program>
         {
             services.RemoveAll<DbContextOptions<CatalogContext>>();
             services.AddDbContext<CatalogContext>(options => options.UseInMemoryDatabase(_databaseName));
+
+            services.RemoveAll<ICatalogEventPublisher>();
+            services.AddSingleton<ICatalogEventPublisher>(Events);
         });
 
         return base.CreateHost(builder);

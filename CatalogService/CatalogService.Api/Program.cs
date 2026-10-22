@@ -8,6 +8,7 @@ using Microsoft.eShopWeb.CatalogService.Domain;
 using Microsoft.eShopWeb.CatalogService.Domain.Interfaces;
 using Microsoft.eShopWeb.CatalogService.Domain.Services;
 using Microsoft.eShopWeb.CatalogService.Infrastructure.Data;
+using Microsoft.eShopWeb.CatalogService.Infrastructure.Messaging;
 using Microsoft.IdentityModel.Tokens;
 using MinimalApi.Endpoint.Configurations.Extensions;
 using MinimalApi.Endpoint.Extensions;
@@ -35,6 +36,10 @@ builder.Services.AddScoped(typeof(IReadRepository<>), typeof(EfRepository<>));
 var catalogSettings = builder.Configuration.Get<CatalogSettings>() ?? new CatalogSettings();
 builder.Services.AddSingleton<IUriComposer>(new UriComposer(catalogSettings));
 builder.Services.AddAutoMapper(typeof(MappingProfile).Assembly);
+
+// Catalog changes are published to RabbitMQ so other services can keep their own copy of name/price.
+builder.Services.Configure<RabbitMqSettings>(builder.Configuration.GetSection(RabbitMqSettings.SectionName));
+builder.Services.AddSingleton<ICatalogEventPublisher, RabbitMqCatalogEventPublisher>();
 
 // Validates the same JWTs the monolith's PublicApi issues, so admin calls keep working.
 var key = Encoding.ASCII.GetBytes(AuthorizationConstants.JWT_SECRET_KEY);
