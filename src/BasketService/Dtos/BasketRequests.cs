@@ -3,9 +3,19 @@ using System.ComponentModel.DataAnnotations;
 namespace Microsoft.eShopWeb.BasketService.Dtos;
 
 /// <summary>
-/// Request bodies for <see cref="Controllers.BasketController"/>. Validation lives on the
-/// attributes here — [ApiController] rejects an invalid body with a ProblemDetails 400
-/// before the action runs, so the actions themselves hold no guard clauses.
+/// Command shapes for the basket operations. Unreferenced since the REST controller was
+/// removed — they are kept as the starting point for the RabbitMQ message contracts, which
+/// want these same shapes.
+/// <para>
+/// WARNING: the validation attributes below are currently inert. They worked because
+/// [ApiController] rejected an invalid body with a ProblemDetails 400 before the action ran,
+/// which is why the domain services hold no guard clauses for these values. A queue consumer
+/// gets no such treatment: nothing invokes DataAnnotations for you, so a malformed message
+/// would reach the domain unchecked. Whoever writes the consumer must either call
+/// Validator.TryValidateObject explicitly or add real guard clauses — and decide what a
+/// failure means on a message, which cannot be a 400 to anyone (dead-letter, or an error
+/// field in the reply).
+/// </para>
 /// </summary>
 public record AddBasketItemRequest
 {

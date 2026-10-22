@@ -3,10 +3,15 @@ using Microsoft.eShopWeb.BasketService.Domain;
 namespace Microsoft.eShopWeb.BasketService.Dtos;
 
 /// <summary>
-/// A basket as it crosses the service boundary.
-/// Deliberately carries no catalog data beyond <see cref="BasketItemDto.CatalogItemId"/> —
-/// resolving product names and pictures stays with whoever owns the catalog, which is
-/// what lets this service keep a database of its own.
+/// A basket as it crosses the service boundary. Unreferenced since the REST controller was
+/// removed — kept because <see cref="FromBasket"/> is the mapping the BasketChanged event
+/// will need, and these are the shapes the message contracts want.
+/// <para>
+/// Carries no catalog data beyond <see cref="BasketItemDto.CatalogItemId"/>, which is what
+/// lets this service keep a database of its own. Note that the planned design revisits this:
+/// denormalising product name and picture onto the event is what would let the Web layer stop
+/// reading catalog tables directly. That trade is not made here.
+/// </para>
 /// </summary>
 public class BasketDto
 {

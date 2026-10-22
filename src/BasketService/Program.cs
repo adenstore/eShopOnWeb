@@ -3,7 +3,6 @@ using Microsoft.eShopWeb.BasketService.Data;
 using Microsoft.eShopWeb.BasketService.Data.Queries;
 using Microsoft.eShopWeb.BasketService.Interfaces;
 using Microsoft.eShopWeb.BasketService.Logging;
-using Microsoft.OpenApi.Models;
 
 // alias
 using BasketDomainService = Microsoft.eShopWeb.BasketService.Services.BasketService;
@@ -18,24 +17,23 @@ builder.Services.AddScoped(typeof(IAppLogger<>), typeof(LoggerAdapter<>));
 builder.Services.AddScoped<IBasketService, BasketDomainService>();
 builder.Services.AddScoped<IBasketQueryService, BasketQueryService>();
 
-builder.Services.AddControllers();
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(c =>
-{
-    c.SwaggerDoc("v1", new OpenApiInfo { Title = "Basket Service", Version = "v1" });
-    c.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, "BasketService.xml"), true);
-});
+// No HTTP API: the gateway reaches this service over RabbitMQ, so the basket operations
+// are being re-exposed as queue consumers rather than controller actions. Until the first
+// consumer lands, nothing drives the domain services registered above.
+builder.Services.AddHealthChecks();
 
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
 {
     app.UseDeveloperExceptionPage();
-    app.UseSwagger();
-    app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "Basket Service v1"));
 }
 
-app.MapControllers();
+// The one HTTP endpoint worth keeping. A message-driven service is otherwise invisible:
+// without this, "container is running" cannot be told apart from "container is running but
+// consuming nothing", and compose healthchecks have nothing to probe. Extend it with the
+// database and the broker connection once the consumer exists.
+app.MapHealthChecks("/health");
 
 app.Logger.LogInformation("LAUNCHING BasketService");
 app.Run();
