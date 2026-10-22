@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using Ardalis.GuardClauses;
 using Ardalis.Result;
+using Microsoft.eShopWeb.ApplicationCore.Dtos;
 using Microsoft.eShopWeb.ApplicationCore.Entities.BasketAggregate;
 using Microsoft.eShopWeb.ApplicationCore.Interfaces;
 using Microsoft.eShopWeb.ApplicationCore.Specifications;
@@ -20,7 +21,29 @@ public class BasketService : IBasketService
         _logger = logger;
     }
 
-    public async Task<Basket> AddItemToBasket(string username, int catalogItemId, decimal price, int quantity = 1)
+    public async Task<BasketDto> GetOrCreateBasketAsync(string buyerId)
+    {
+        var basketSpec = new BasketWithItemsSpecification(buyerId);
+        var basket = await _basketRepository.FirstOrDefaultAsync(basketSpec);
+
+        if (basket == null)
+        {
+            basket = new Basket(buyerId);
+            await _basketRepository.AddAsync(basket);
+        }
+
+        return BasketDto.FromBasket(basket);
+    }
+
+    public async Task<BasketDto?> GetBasketAsync(int basketId)
+    {
+        var basketSpec = new BasketWithItemsSpecification(basketId);
+        var basket = await _basketRepository.FirstOrDefaultAsync(basketSpec);
+
+        return basket is null ? null : BasketDto.FromBasket(basket);
+    }
+
+    public async Task<BasketDto> AddItemToBasket(string username, int catalogItemId, decimal price, int quantity = 1)
     {
         var basketSpec = new BasketWithItemsSpecification(username);
         var basket = await _basketRepository.FirstOrDefaultAsync(basketSpec);
@@ -34,7 +57,7 @@ public class BasketService : IBasketService
         basket.AddItem(catalogItemId, price, quantity);
 
         await _basketRepository.UpdateAsync(basket);
-        return basket;
+        return BasketDto.FromBasket(basket);
     }
 
     public async Task DeleteBasketAsync(int basketId)
@@ -44,11 +67,11 @@ public class BasketService : IBasketService
         await _basketRepository.DeleteAsync(basket);
     }
 
-    public async Task<Result<Basket>> SetQuantities(int basketId, Dictionary<string, int> quantities)
+    public async Task<Result<BasketDto>> SetQuantities(int basketId, Dictionary<string, int> quantities)
     {
         var basketSpec = new BasketWithItemsSpecification(basketId);
         var basket = await _basketRepository.FirstOrDefaultAsync(basketSpec);
-        if (basket == null) return Result<Basket>.NotFound();
+        if (basket == null) return Result<BasketDto>.NotFound();
 
         foreach (var item in basket.Items)
         {
@@ -60,7 +83,7 @@ public class BasketService : IBasketService
         }
         basket.RemoveEmptyItems();
         await _basketRepository.UpdateAsync(basket);
-        return basket;
+        return BasketDto.FromBasket(basket);
     }
 
     public async Task TransferBasketAsync(string anonymousId, string userName)
