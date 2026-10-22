@@ -11,7 +11,10 @@ public static class ConfigureWebServices
         services.AddMediatR(cfg => 
             cfg.RegisterServicesFromAssembly(typeof(BasketViewModelService).Assembly));
         services.AddScoped<IBasketViewModelService, BasketViewModelService>();
-        services.AddScoped<ICatalogItemViewModelService, CatalogItemViewModelService>();
+        // Commented out on purpose: CatalogItemViewModelService is only used by the old, unreachable Razor admin
+        // page Pages/Admin/EditCatalogItem, which is commented out because it writes to the monolith's CatalogDb
+        // and would break once the monolith's catalog code is removed. See EditCatalogItem.cshtml.cs for details.
+        //services.AddScoped<ICatalogItemViewModelService, CatalogItemViewModelService>();
         services.Configure<CatalogSettings>(configuration);
 
         // The catalog is being moved into its own microservice (CatalogService/). With "UseCatalogService": true

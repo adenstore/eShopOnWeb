@@ -1,4 +1,18 @@
-﻿@page
+﻿@*
+    ------------------------------------------------------------------------------------------------
+    COMMENTED OUT ON PURPOSE - Catalog microservice migration (CatalogService/)
+
+    This is the view for the old Razor admin page that edits a catalog item's name and price in the
+    monolith's own catalog database. It is unreachable, BlazorAdmin (which uses CatalogService) is the
+    real admin UI, and the page depends on the monolith's catalog entity, so it would stop compiling
+    once the monolith's catalog code is removed. Admin/front-end stays in the monolith by team decision.
+
+    The whole view is commented out (including @page and @model), because its page model in
+    EditCatalogItem.cshtml.cs is commented out too. See that file for the full explanation and for
+    the four pieces that must be uncommented together to bring the page back.
+    ------------------------------------------------------------------------------------------------
+
+@page
 @{
     ViewData["Title"] = "Admin - Edit Catalog";
     @model EditCatalogItemModel
@@ -36,3 +50,4 @@
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
 }
+*@
