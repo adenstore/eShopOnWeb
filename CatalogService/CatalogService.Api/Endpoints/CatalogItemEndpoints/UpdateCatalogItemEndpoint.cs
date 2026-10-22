@@ -9,6 +9,8 @@ using Microsoft.eShopWeb.CatalogService.Domain.Entities;
 using Microsoft.eShopWeb.CatalogService.Domain.Interfaces;
 using MinimalApi.Endpoint;
 using Microsoft.eShopWeb.CatalogService.Contracts;
+using Microsoft.eShopWeb.CatalogService.Contracts.Events;
+using Microsoft.eShopWeb.CatalogService.Infrastructure.Messaging;
 
 namespace Microsoft.eShopWeb.CatalogService.Api.Endpoints.CatalogItemEndpoints;
 
@@ -16,12 +18,14 @@ namespace Microsoft.eShopWeb.CatalogService.Api.Endpoints.CatalogItemEndpoints;
 /// Updates a Catalog Item
 /// </summary>
 public class UpdateCatalogItemEndpoint : IEndpoint<IResult, UpdateCatalogItemRequest, IRepository<CatalogItem>>
-{ 
+{
     private readonly IUriComposer _uriComposer;
+    private readonly ICatalogEventPublisher _eventPublisher;
 
-    public UpdateCatalogItemEndpoint(IUriComposer uriComposer)
+    public UpdateCatalogItemEndpoint(IUriComposer uriComposer, ICatalogEventPublisher eventPublisher)
     {
         _uriComposer = uriComposer;
+        _eventPublisher = eventPublisher;
     }
 
     public void AddRoute(IEndpointRouteBuilder app)
@@ -52,6 +56,10 @@ public class UpdateCatalogItemEndpoint : IEndpoint<IResult, UpdateCatalogItemReq
         existingItem.UpdateType(request.CatalogTypeId);
 
         await itemRepository.UpdateAsync(existingItem);
+
+        await _eventPublisher.PublishAsync(new CatalogItemUpdatedIntegrationEvent(
+            Guid.NewGuid(), DateTimeOffset.UtcNow, existingItem.Id, existingItem.Name, existingItem.Description, existingItem.Price,
+            existingItem.PictureUri, existingItem.CatalogBrandId, existingItem.CatalogTypeId));
 
         var dto = new CatalogItemDto
         {

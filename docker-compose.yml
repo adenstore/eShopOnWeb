@@ -31,6 +31,7 @@ services:
       dockerfile: CatalogService/CatalogService.Api/Dockerfile
     depends_on:
       - "sqlserver"
+      - "rabbitmq"
   eshopapigateway:
     image: ${DOCKER_REGISTRY-}eshopapigateway
     build:
@@ -46,4 +47,14 @@ services:
     environment:
       - SA_PASSWORD=@someThingComplicated1234
       - ACCEPT_EULA=Y
+  rabbitmq:
+    image: rabbitmq:4-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      # The built-in "guest" user may only log in from inside the RabbitMQ container itself,
+      # so the other containers use this user instead.
+      - RABBITMQ_DEFAULT_USER=eshop
+      - RABBITMQ_DEFAULT_PASS=eshop
 
