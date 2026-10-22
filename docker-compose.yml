@@ -24,6 +24,7 @@ services:
       dockerfile: OrderService/OrderService/Dockerfile
     depends_on:
       - "sqlserver"
+      - "rabbitmq"
   eshopcatalogservice:
     image: ${DOCKER_REGISTRY-}eshopcatalogservice
     build:

@@ -10,7 +10,7 @@ Web (monolit)                         OrderService
   Mine ordrer ──► OrderApiClient ─────HTTP GET  /api/orders──►      │
                                                                      ▼
                                                     IOrderEventPublisher (OrderCreated)
-                                                    → senere: RabbitMQ
+                                                    → RabbitMQ exchange "order-events"
 ```
 
 - **Web** ejer stadig kurv og katalog. Ved checkout tager den et "snapshot" af varerne (navn, billede, pris) og sender dem til OrderService, så OrderService aldrig skal spørge kataloget.
@@ -40,6 +40,21 @@ dotnet run --project src/Web
 
 Med Docker: `docker compose up` starter også `eshoporderservice` på port 5300. Databasen oprettes automatisk ved opstart (EF Core migrations).
 
-## RabbitMQ (næste skridt)
+## RabbitMQ
 
-Når en ordre er gemt, kalder endpointet `IOrderEventPublisher.PublishAsync(OrderCreatedIntegrationEvent)`. Lige nu logger `LoggingOrderEventPublisher` bare beskeden. For at bruge RabbitMQ laver man en `RabbitMqOrderEventPublisher : IOrderEventPublisher` og skifter registreringen i `Program.cs` – endpoints og tests skal ikke ændres.
+Når en ordre er gemt, kalder endpointet `IOrderEventPublisher.PublishAsync(OrderCreatedIntegrationEvent)`. `RabbitMqOrderEventPublisher` sender beskeden til RabbitMQ:
+
+- **Exchange:** `order-events` (fanout, durable). Navnet ligger i `OrderService.Contracts` (`OrderEventsExchange.Name`), så andre services kan bruge det.
+- **Mønster:** publish/subscribe. OrderService kender ikke modtagerne; en service, der vil have ordre-events, laver sin egen kø og binder den til exchangen.
+- **Besked:** JSON (camelCase) af `OrderCreatedIntegrationEvent`. `Type` = `OrderCreatedIntegrationEvent`, `MessageId` = `EventId`, og beskeden er `Persistent`.
+- **Fejl:** Hvis RabbitMQ er nede, logges fejlen, men ordren er allerede gemt, og kaldet lykkes stadig. Eventet går så tabt; et outbox-mønster ville løse det.
+- **Tests** bruger `LoggingOrderEventPublisher`, så de ikke kræver en kørende RabbitMQ.
+
+Konfiguration ligger i sektionen `RabbitMQ` (`HostName`, `Port`, `UserName`, `Password`). Lokalt bruges `localhost`/`guest`, i Docker `rabbitmq`/`eshop`.
+
+```bash
+# Kør RabbitMQ alene, hvis du kører OrderService uden for Docker
+docker run -d --name rabbitmq -p 5672:5672 -p 15672:15672 rabbitmq:4-management
+```
+
+Management UI: `http://localhost:15672` (guest/guest lokalt, eshop/eshop i docker compose). Under *Exchanges* → `order-events` kan man se beskederne komme ind, og man kan binde en test-kø til exchangen for at læse dem.
