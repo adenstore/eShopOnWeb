@@ -34,7 +34,8 @@ Swagger UI: `http://localhost:5300/swagger`
 # Uden SQL Server (in-memory database)
 UseOnlyInMemoryDatabase=true dotnet run --project OrderService/OrderService --urls http://localhost:5300
 
-# Web finder servicen via "OrderServiceBaseUrl" i src/Web/appsettings.json (default http://localhost:5300/)
+# Web kalder OrderService gennem ApiGateway via "OrderServiceBaseUrl" i src/Web/appsettings.json (default http://localhost:5278/),
+# så ApiGateway skal også køre: dotnet run --project src/ApiGateway --launch-profile http
 dotnet run --project src/Web
 ```
 

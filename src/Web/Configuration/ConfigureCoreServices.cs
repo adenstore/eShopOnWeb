@@ -17,10 +17,10 @@ public static class ConfigureCoreServices
 
         services.AddScoped<IOrderService, OrderCheckoutService>();
 
-        // Orders live in their own microservice (OrderService/OrderService); the Web app calls it over HTTP.
+        // Orders live in their own microservice (OrderService/OrderService); the Web app calls it over HTTP through the ApiGateway.
         services.AddHttpClient<IOrderApiClient, OrderApiClient>(client =>
         {
-            var orderServiceBaseUrl = configuration["OrderServiceBaseUrl"] ?? "http://localhost:5300/";
+            var orderServiceBaseUrl = configuration["OrderServiceBaseUrl"] ?? "http://localhost:5278/";
             client.BaseAddress = new Uri(orderServiceBaseUrl);
         });
 
