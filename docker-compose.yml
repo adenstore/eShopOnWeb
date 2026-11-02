@@ -48,7 +48,7 @@ services:
     ports:
       - "1433:1433"
     environment:
-      - SA_PASSWORD=@someThingComplicated1234
+      - SA_PASSWORD=${SA_PASSWORD:?Copy .env.example to .env}
       - ACCEPT_EULA=Y
   rabbitmq:
     image: rabbitmq:4-management
@@ -58,6 +58,6 @@ services:
     environment:
       # The built-in "guest" user may only log in from inside the RabbitMQ container itself,
       # so the other containers use this user instead.
-      - RABBITMQ_DEFAULT_USER=eshop
-      - RABBITMQ_DEFAULT_PASS=eshop
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_USER:?Copy .env.example to .env}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASS:?Copy .env.example to .env}
 

@@ -264,3 +264,6 @@ pub/
 # Nix dev shell state, NuGet package cache, CLI home, local tools (Erik)
 .nupkg/
 .dotnet/
+
+# Local secrets for docker compose (see .env.example)
+.env
