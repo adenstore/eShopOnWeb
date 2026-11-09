@@ -52,6 +52,7 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OrderService.Contracts", "OrderService\OrderService.Contracts\OrderService.Contracts.csproj", "{19A3162D-D993-4D89-BD0E-0D157B52DFD9}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OrderService.Tests", "OrderService\OrderService.Tests\OrderService.Tests.csproj", "{905F4248-6BB6-4E5D-9B83-31E775F7B91A}"
+EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ApiGateway", "src\ApiGateway\ApiGateway.csproj", "{15B909BE-B977-4F77-9BA8-4A1BF04C7C09}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "CatalogService", "CatalogService", "{3018FE93-2D93-7D0A-2D30-70915967B595}"
