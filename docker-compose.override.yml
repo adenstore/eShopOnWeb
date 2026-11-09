@@ -22,6 +22,10 @@ services:
    environment:
      - ASPNETCORE_ENVIRONMENT=Docker
      - ASPNETCORE_URLS=http://+:8080
+     # Secrets come from .env and override appsettings.Docker.json.
+     - ConnectionStrings__OrderConnection=Server=sqlserver,1433;Initial Catalog=Microsoft.eShopOnWeb.OrderDb;User Id=sa;Password=${SA_PASSWORD};TrustServerCertificate=true;
+     - RabbitMQ__UserName=${RABBITMQ_USER}
+     - RabbitMQ__Password=${RABBITMQ_PASS}
    ports:
      - "5300:8080"
  eshopcatalogservice:
@@ -34,10 +38,22 @@ services:
    environment:
      - ASPNETCORE_ENVIRONMENT=Docker
      - ASPNETCORE_URLS=http://+:8080
+     # Secrets come from .env and override appsettings.Docker.json, as for the other services.
+     - ConnectionStrings__BasketConnection=Server=sqlserver,1433;Initial Catalog=Microsoft.eShopOnWeb.BasketDb;User Id=sa;Password=${SA_PASSWORD};TrustServerCertificate=true;
+     - RabbitMQ__UserName=${RABBITMQ_USER}
+     - RabbitMQ__Password=${RABBITMQ_PASS}
    # Only /health is served over HTTP; the service's real interface is the RabbitMQ queues.
    # The port matches launchSettings so a local run and a compose run look the same.
    ports:
      - "5198:8080"
+ eshoplagerservice:
+   environment:
+     - ASPNETCORE_ENVIRONMENT=Docker
+     - ASPNETCORE_URLS=http://+:8080
+     - RabbitMQ__UserName=${RABBITMQ_USER}
+     - RabbitMQ__Password=${RABBITMQ_PASS}
+   ports:
+     - "5500:8080"
  eshopapigateway:
    environment:
      - ASPNETCORE_ENVIRONMENT=Docker

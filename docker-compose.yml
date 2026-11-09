@@ -42,6 +42,14 @@ services:
     depends_on:
       - "sqlserver"
       - "rabbitmq"
+  eshoplagerservice:
+    image: ${DOCKER_REGISTRY-}eshoplagerservice
+    build:
+      context: .
+      dockerfile: LagerService/LagerService/Dockerfile
+    depends_on:
+      - "redis"
+      - "rabbitmq"
   eshopapigateway:
     image: ${DOCKER_REGISTRY-}eshopapigateway
     build:
@@ -51,12 +59,13 @@ services:
       - "eshoppublicapi"
       - "eshopcatalogservice"
       - "eshoporderservice"
+      - "eshoplagerservice"
   sqlserver:
     image: mcr.microsoft.com/azure-sql-edge
     ports:
       - "1433:1433"
     environment:
-      - SA_PASSWORD=@someThingComplicated1234
+      - SA_PASSWORD=${SA_PASSWORD:?Copy .env.example to .env}
       - ACCEPT_EULA=Y
   rabbitmq:
     image: rabbitmq:4-management
@@ -66,6 +75,16 @@ services:
     environment:
       # The built-in "guest" user may only log in from inside the RabbitMQ container itself,
       # so the other containers use this user instead.
-      - RABBITMQ_DEFAULT_USER=eshop
-      - RABBITMQ_DEFAULT_PASS=eshop
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_USER:?Copy .env.example to .env}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASS:?Copy .env.example to .env}
+  redis:
+    # LagerService stores its stock here (key-value database instead of SQL Server).
+    image: redis:7
+    command: redis-server --appendonly yes
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
 
+volumes:
+  redis-data:

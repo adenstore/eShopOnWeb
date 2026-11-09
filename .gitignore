@@ -264,3 +264,9 @@ pub/
 # Nix dev shell state, NuGet package cache, CLI home, local tools (Erik)
 .nupkg/
 .dotnet/
+
+# Local secrets for docker compose (see .env.example)
+.env
+# The same secrets saved without the leading dot — easy to do when the file
+# arrives over chat, and not covered by the pattern above.
+/env
