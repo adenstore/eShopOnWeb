@@ -96,6 +96,12 @@ There is no caller to return a 400 to, so:
 - **A publish failure on `basket-events`** is logged, not retried: the change is already committed,
   and replaying `AddItem` would add the quantity twice. The cost is a stale projection until that
   basket next changes. An outbox table is the fix if that ever shows up.
+- **A broker that is not up yet** is retried with a doubling backoff rather than being fatal. An
+  exception out of `BackgroundService.ExecuteAsync` stops the entire host by default, so a missing
+  broker used to kill the service outright — `/health` included, leaving nothing to report why.
+  `depends_on` in compose waits for the container to start, not for RabbitMQ to finish booting, so
+  that race is routine. Once attached, RabbitMQ.Client recovers dropped connections, channels and
+  consumers by itself.
 
 ## Calling it: the direct reply-to trap
 
@@ -130,11 +136,29 @@ queue to `basket-events` to see the events, and check `invalid` when a message g
 
 ## Tests
 
-`dotnet test tests/BasketServiceTests` — 48 tests, no broker needed. Every message rule lives in
+Two projects, at two levels of the test pyramid.
+
+**`tests/BasketServiceTests` — 48 tests, no broker, milliseconds.** Every message rule lives in
 `Messaging/BasketMessageHandler.cs`, which has no AMQP in it; the consumers above it are pure
-transport. `Contracts/WireFormatTests.cs` round-trips each message shape, including
+transport. That split is what keeps the rules reachable without infrastructure.
+`Contracts/WireFormatTests.cs` round-trips each message shape, including
 `OrderCreatedIntegrationEvent` from OrderService's own contracts assembly, because a shape that does
 not round-trip fails at runtime on a queue where there is no compiler to catch it.
+
+**`tests/BasketServiceIntegrationTests` — 15 tests, real RabbitMQ, ~15s. Needs Docker.** Testcontainers
+starts an actual broker on a random port and `WebApplicationFactory` runs the service against it,
+with only the database faked. These cover what a unit test cannot: that messages actually route,
+that rejected ones reach the dead-letter queue, that an unroutable key is caught by the alternate
+exchange, and that request/reply works over the broker rather than over a method call.
+
+Because messaging is not request/response, those tests assert through `PolledWait` — a Polly retry
+that re-checks until the assertion holds. Asserting immediately after a publish would measure the
+speed of the machine, not the behaviour of the service: green on a laptop, flaky in CI.
+
+```sh
+dotnet test tests/BasketServiceTests              # always
+dotnet test tests/BasketServiceIntegrationTests   # needs a container runtime
+```
 
 ## Still to do
 
