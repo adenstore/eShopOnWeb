@@ -1,3 +1,4 @@
+using FluentAssertions;
 using System.Net;
 using System.Net.Http.Json;
 using Microsoft.eShopWeb.OrderService.Contracts;
@@ -29,16 +30,16 @@ public class OrderEndpointsTests : IClassFixture<OrderServiceApplication>
         var buyerId = Guid.NewGuid().ToString();
 
         var createResponse = await _client.PostAsJsonAsync("/api/orders", NewOrder(buyerId));
-        Assert.Equal(HttpStatusCode.Created, createResponse.StatusCode);
+        createResponse.StatusCode.Should().Be(HttpStatusCode.Created);
         var created = await createResponse.Content.ReadFromJsonAsync<CreateOrderResponse>();
 
         var order = await _client.GetFromJsonAsync<OrderDto>($"/api/orders/{created!.OrderId}?buyerId={buyerId}");
 
-        Assert.NotNull(order);
-        Assert.Equal(buyerId, order.BuyerId);
-        Assert.Equal(2, order.Items.Count);
-        Assert.Equal(19.5m * 2 + 8.5m, order.Total);
-        Assert.Equal("Kent", order.ShipToAddress.City);
+        order.Should().NotBeNull();
+        order.BuyerId.Should().Be(buyerId);
+        order.Items.Count.Should().Be(2);
+        order.Total.Should().Be(19.5m * 2 + 8.5m);
+        order.ShipToAddress.City.Should().Be("Kent");
     }
 
     [Fact]
@@ -51,9 +52,9 @@ public class OrderEndpointsTests : IClassFixture<OrderServiceApplication>
 
         var orders = await _client.GetFromJsonAsync<List<OrderDto>>($"/api/orders?buyerId={buyerId}");
 
-        Assert.NotNull(orders);
-        Assert.Equal(2, orders.Count);
-        Assert.All(orders, o => Assert.Equal(buyerId, o.BuyerId));
+        orders.Should().NotBeNull();
+        orders.Count.Should().Be(2);
+        orders.Should().OnlyContain(o => o.BuyerId == buyerId);
     }
 
     [Fact]
@@ -64,7 +65,7 @@ public class OrderEndpointsTests : IClassFixture<OrderServiceApplication>
 
         var response = await _client.GetAsync($"/api/orders/{created!.OrderId}?buyerId=someone-else");
 
-        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
     [Fact]
@@ -74,6 +75,6 @@ public class OrderEndpointsTests : IClassFixture<OrderServiceApplication>
 
         var response = await _client.PostAsJsonAsync("/api/orders", request);
 
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 }

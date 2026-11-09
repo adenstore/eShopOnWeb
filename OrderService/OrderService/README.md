@@ -39,7 +39,7 @@ UseOnlyInMemoryDatabase=true dotnet run --project OrderService/OrderService --ur
 dotnet run --project src/Web
 ```
 
-Med Docker: `docker compose up` starter også `eshoporderservice` på port 5300. Databasen oprettes automatisk ved opstart (EF Core migrations).
+Med Docker: kopiér først `.env.example` til `.env` i roden og udfyld passwords (`.env` er i `.gitignore`, så de ikke havner i git). `docker compose up` starter derefter også `eshoporderservice` på port 5300. Databasen oprettes automatisk ved opstart (EF Core migrations).
 
 ## RabbitMQ
 
@@ -51,11 +51,11 @@ Når en ordre er gemt, kalder endpointet `IOrderEventPublisher.PublishAsync(Orde
 - **Fejl:** Hvis RabbitMQ er nede, logges fejlen, men ordren er allerede gemt, og kaldet lykkes stadig. Eventet går så tabt; et outbox-mønster ville løse det.
 - **Tests** bruger `LoggingOrderEventPublisher`, så de ikke kræver en kørende RabbitMQ.
 
-Konfiguration ligger i sektionen `RabbitMQ` (`HostName`, `Port`, `UserName`, `Password`). Lokalt bruges `localhost`/`guest`, i Docker `rabbitmq`/`eshop`.
+Konfiguration ligger i sektionen `RabbitMQ` (`HostName`, `Port`, `UserName`, `Password`). Lokalt bruges `localhost`/`guest`. I Docker står kun `HostName` (`rabbitmq`) i `appsettings.Docker.json`; brugernavn og password kommer fra `.env` via miljøvariablerne `RabbitMQ__UserName` og `RabbitMQ__Password` i `docker-compose.override.yml`. Det samme gælder SQL-passwordet i `ConnectionStrings__OrderConnection`.
 
 ```bash
 # Kør RabbitMQ alene, hvis du kører OrderService uden for Docker
 docker run -d --name rabbitmq -p 5672:5672 -p 15672:15672 rabbitmq:4-management
 ```
 
-Management UI: `http://localhost:15672` (guest/guest lokalt, eshop/eshop i docker compose). Under *Exchanges* → `order-events` kan man se beskederne komme ind, og man kan binde en test-kø til exchangen for at læse dem.
+Management UI: `http://localhost:15672` (guest/guest lokalt, brugeren fra `.env` i docker compose). Under *Exchanges* → `order-events` kan man se beskederne komme ind, og man kan binde en test-kø til exchangen for at læse dem.
