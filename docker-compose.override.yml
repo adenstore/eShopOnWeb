@@ -34,6 +34,14 @@ services:
      - ASPNETCORE_URLS=http://+:8080
    ports:
      - "5400:8080"
+ eshoplagerservice:
+   environment:
+     - ASPNETCORE_ENVIRONMENT=Docker
+     - ASPNETCORE_URLS=http://+:8080
+     - RabbitMQ__UserName=${RABBITMQ_USER}
+     - RabbitMQ__Password=${RABBITMQ_PASS}
+   ports:
+     - "5500:8080"
  eshopapigateway:
    environment:
      - ASPNETCORE_ENVIRONMENT=Docker
