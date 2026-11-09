@@ -55,6 +55,13 @@
                 export ASPNETCORE_ENVIRONMENT=Development
                 export ConnectionStrings__CatalogConnection="${sqlConnection "Microsoft.eShopOnWeb.CatalogDb"}"
                 export ConnectionStrings__IdentityConnection="${sqlConnection "Microsoft.eShopOnWeb.Identity"}"
+                export ConnectionStrings__BasketConnection="${sqlConnection "Microsoft.eShopOnWeb.BasketDb"}"
+
+                # Setting RABBITMQ_DEFAULT_USER in docker-compose.yml replaces the guest account
+                # rather than adding to it, so the "guest"/"guest" in every service's
+                # appsettings.json cannot authenticate against that broker at all.
+                export RabbitMQ__UserName=eshop
+                export RabbitMQ__Password=eshop
 
                 if [ ! -d "$NUGET_PACKAGES" ]; then
                     echo "Restoring NuGet packages for project..."
