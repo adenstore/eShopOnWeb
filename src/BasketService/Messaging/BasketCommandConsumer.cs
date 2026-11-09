@@ -69,6 +69,12 @@ public class BasketCommandConsumer : RabbitMqConsumerService
             arguments: new Dictionary<string, object?> { ["alternate-exchange"] = BasketMessaging.UnroutableExchange },
             cancellationToken: cancellationToken);
 
+        // Declared here as well as by the publisher, so the service owns its whole topology from
+        // startup. The publisher only creates this on the first event, which would leave a
+        // subscriber that connects before anyone's basket changes unable to bind to it at all.
+        await channel.ExchangeDeclareAsync(BasketMessaging.EventsExchange, ExchangeType.Fanout,
+            durable: true, autoDelete: false, cancellationToken: cancellationToken);
+
         await channel.QueueDeclareAsync(BasketMessaging.CommandQueue, durable: true, exclusive: false,
             autoDelete: false,
             arguments: new Dictionary<string, object?> { ["x-dead-letter-exchange"] = BasketMessaging.InvalidExchange },
