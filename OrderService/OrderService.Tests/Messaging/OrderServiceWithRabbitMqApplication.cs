@@ -6,8 +6,11 @@ using Microsoft.Extensions.Hosting;
 namespace Microsoft.eShopWeb.OrderService.Tests.Messaging;
 
 /// <summary>
-/// Opgave 3A: like <see cref="Endpoints.OrderServiceApplication"/>, but keeps the real RabbitMqOrderEventPublisher
-/// and points it at the test container by overriding the "RabbitMQ" settings. The service itself is unchanged.
+/// Opgave 3A – injicér containerens forbindelsesoplysninger i mikrotjenesten.
+///
+/// Starter OrderService i hukommelsen ligesom <see cref="Endpoints.OrderServiceApplication"/>,
+/// med én vigtig forskel: den udskifter IKKE RabbitMqOrderEventPublisher med LoggingOrderEventPublisher.
+/// Den rigtige publisher bliver brugt og sender til test-containeren.
 /// </summary>
 public class OrderServiceWithRabbitMqApplication : WebApplicationFactory<Program>
 {
@@ -21,10 +24,15 @@ public class OrderServiceWithRabbitMqApplication : WebApplicationFactory<Program
     protected override IHost CreateHost(IHostBuilder builder)
     {
         builder.UseEnvironment("Development");
+
+        // Overskriver værdierne fra appsettings.json. OrderService binder sektionen "RabbitMQ"
+        // til RabbitMqSettings, så selve servicen skal ikke ændres for at kunne testes.
         builder.ConfigureHostConfiguration(config =>
             config.AddInMemoryCollection(new Dictionary<string, string?>
             {
+                // Databasen kører stadig i hukommelsen, så der skal ikke bruges SQL Server.
                 ["UseOnlyInMemoryDatabase"] = "true",
+                // Peg publisheren på containeren i stedet for localhost:5672.
                 ["RabbitMQ:HostName"] = _rabbitMq.HostName,
                 ["RabbitMQ:Port"] = _rabbitMq.Port.ToString(),
                 ["RabbitMQ:UserName"] = RabbitMqContainerFixture.UserName,
