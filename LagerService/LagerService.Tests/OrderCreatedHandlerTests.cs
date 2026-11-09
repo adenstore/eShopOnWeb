@@ -1,3 +1,4 @@
+using FluentAssertions;
 using Microsoft.eShopWeb.LagerService.Data;
 using Microsoft.eShopWeb.LagerService.Messaging;
 using Microsoft.eShopWeb.OrderService.Contracts;
@@ -29,8 +30,8 @@ public class OrderCreatedHandlerTests
 
         await _handler.HandleAsync(CreateEvent((1, 3), (2, 5)));
 
-        Assert.Equal(7, await _stock.GetQuantityAsync(1));
-        Assert.Equal(0, await _stock.GetQuantityAsync(2));
+        (await _stock.GetQuantityAsync(1)).Should().Be(7);
+        (await _stock.GetQuantityAsync(2)).Should().Be(0);
     }
 
     [Fact]
@@ -42,7 +43,7 @@ public class OrderCreatedHandlerTests
         await _handler.HandleAsync(orderCreated);
         await _handler.HandleAsync(orderCreated);
 
-        Assert.Equal(7, await _stock.GetQuantityAsync(1));
+        (await _stock.GetQuantityAsync(1)).Should().Be(7);
     }
 
     [Fact]
@@ -52,6 +53,6 @@ public class OrderCreatedHandlerTests
 
         await _handler.HandleAsync(CreateEvent((1, 5)));
 
-        Assert.Equal(2, await _stock.GetQuantityAsync(1));
+        (await _stock.GetQuantityAsync(1)).Should().Be(2);
     }
 }
