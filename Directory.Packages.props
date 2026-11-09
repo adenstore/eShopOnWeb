@@ -78,5 +78,8 @@
     <PackageVersion Include="MSTest.TestAdapter" Version="3.2.2" />
     <PackageVersion Include="MSTest.TestFramework" Version="3.2.2" />
     <PackageVersion Include="coverlet.collector" Version="6.0.2" />
+    <!-- Niveau 3: asynkrone tests mod en ægte RabbitMQ (opgave 3A) og polling (opgave 3B) -->
+    <PackageVersion Include="Testcontainers.RabbitMq" Version="4.1.0" />
+    <PackageVersion Include="Polly" Version="8.5.0" />
   </ItemGroup>
 </Project>
