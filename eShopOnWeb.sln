@@ -67,6 +67,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CatalogService.Tests", "Cat
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CatalogService.Contracts", "CatalogService\CatalogService.Contracts\CatalogService.Contracts.csproj", "{C4E5A1B2-6F3D-4E8A-9B7C-2D1E0F3A4B5C}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BasketServiceIntegrationTests", "tests\BasketServiceIntegrationTests\BasketServiceIntegrationTests.csproj", "{60D3AB87-7EF6-4C9F-B39D-0024E0FA3A1E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -161,6 +163,10 @@ Global
 		{C4E5A1B2-6F3D-4E8A-9B7C-2D1E0F3A4B5C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C4E5A1B2-6F3D-4E8A-9B7C-2D1E0F3A4B5C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C4E5A1B2-6F3D-4E8A-9B7C-2D1E0F3A4B5C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{60D3AB87-7EF6-4C9F-B39D-0024E0FA3A1E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{60D3AB87-7EF6-4C9F-B39D-0024E0FA3A1E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{60D3AB87-7EF6-4C9F-B39D-0024E0FA3A1E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{60D3AB87-7EF6-4C9F-B39D-0024E0FA3A1E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -187,6 +193,7 @@ Global
 		{30A62255-7794-4490-9B23-DE9EA3D2EA21} = {3018FE93-2D93-7D0A-2D30-70915967B595}
 		{7B2D2BBF-1D59-4194-B4E4-2E070F56DDE5} = {3018FE93-2D93-7D0A-2D30-70915967B595}
 		{C4E5A1B2-6F3D-4E8A-9B7C-2D1E0F3A4B5C} = {3018FE93-2D93-7D0A-2D30-70915967B595}
+		{60D3AB87-7EF6-4C9F-B39D-0024E0FA3A1E} = {15EA4737-125B-4E6E-A806-E13B7EBCDCCF}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {49813262-5DA3-4D61-ABD3-493C74CE8C2B}
