@@ -10,47 +10,39 @@ namespace Microsoft.eShopWeb.BasketService.Messaging;
 /// for queries, replies to the caller's ReplyTo queue. Transport only — the work is in
 /// <see cref="BasketMessageHandler"/>.
 /// </summary>
-public class BasketCommandConsumer : BackgroundService
+public class BasketCommandConsumer : RabbitMqConsumerService
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
-    private readonly IRabbitMqConnection _connection;
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<BasketCommandConsumer> _logger;
-    private IChannel? _channel;
 
     public BasketCommandConsumer(IRabbitMqConnection connection, IServiceScopeFactory scopeFactory,
         ILogger<BasketCommandConsumer> logger)
+        : base(connection, logger)
     {
-        _connection = connection;
         _scopeFactory = scopeFactory;
         _logger = logger;
     }
 
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    protected override async Task ConfigureAsync(IChannel channel, CancellationToken cancellationToken)
     {
-        var connection = await _connection.GetAsync(stoppingToken);
-        _channel = await connection.CreateChannelAsync(cancellationToken: stoppingToken);
-
-        await DeclareTopologyAsync(_channel, stoppingToken);
+        await DeclareTopologyAsync(channel, cancellationToken);
 
         // One unacked message at a time. Without it the broker pushes the whole queue to this one
         // consumer, and a crash redelivers all of it instead of one message. It also keeps the
         // queue strictly FIFO through the handler, which is what lets a query published after a
         // command see that command's result — see BasketMessaging.
-        await _channel.BasicQosAsync(prefetchSize: 0, prefetchCount: 1, global: false, cancellationToken: stoppingToken);
+        await channel.BasicQosAsync(prefetchSize: 0, prefetchCount: 1, global: false, cancellationToken: cancellationToken);
 
-        var consumer = new AsyncEventingBasicConsumer(_channel);
+        var consumer = new AsyncEventingBasicConsumer(channel);
         consumer.ReceivedAsync += OnReceivedAsync;
 
-        await _channel.BasicConsumeAsync(BasketMessaging.CommandQueue, autoAck: false, consumer: consumer,
-            cancellationToken: stoppingToken);
+        await channel.BasicConsumeAsync(BasketMessaging.CommandQueue, autoAck: false, consumer: consumer,
+            cancellationToken: cancellationToken);
 
         _logger.LogInformation("Consuming {Queue} on exchange {Exchange}",
             BasketMessaging.CommandQueue, BasketMessaging.CommandExchange);
-
-        // Nothing left to do on this thread; the consumer callbacks drive everything from here.
-        await Task.Delay(Timeout.Infinite, stoppingToken);
     }
 
     private static async Task DeclareTopologyAsync(IChannel channel, CancellationToken cancellationToken)
@@ -98,7 +90,7 @@ public class BasketCommandConsumer : BackgroundService
 
     private async Task OnReceivedAsync(object sender, BasicDeliverEventArgs ea)
     {
-        var channel = _channel!;
+        var channel = Channel;
         var routingKey = ea.RoutingKey;
 
         try
@@ -209,7 +201,7 @@ public class BasketCommandConsumer : BackgroundService
     private async Task RejectAsync(BasicDeliverEventArgs ea, string routingKey, string reason)
     {
         _logger.LogWarning("Rejected {RoutingKey}: {Reason}", routingKey, reason);
-        await _channel!.BasicNackAsync(ea.DeliveryTag, multiple: false, requeue: false);
+        await Channel.BasicNackAsync(ea.DeliveryTag, multiple: false, requeue: false);
     }
 
     /// <summary>
@@ -226,7 +218,7 @@ public class BasketCommandConsumer : BackgroundService
             return;
         }
 
-        var connection = await _connection.GetAsync();
+        var connection = await Connection.GetAsync();
         await using var channel = await connection.CreateChannelAsync();
 
         var properties = new BasicProperties
@@ -242,15 +234,5 @@ public class BasketCommandConsumer : BackgroundService
         await channel.BasicPublishAsync(exchange: string.Empty, routingKey: replyTo, mandatory: false,
             basicProperties: properties,
             body: JsonSerializer.SerializeToUtf8Bytes(reply, JsonOptions));
-    }
-
-    public override async Task StopAsync(CancellationToken cancellationToken)
-    {
-        await base.StopAsync(cancellationToken);
-        if (_channel is not null)
-        {
-            await _channel.CloseAsync(cancellationToken);
-            await _channel.DisposeAsync();
-        }
     }
 }

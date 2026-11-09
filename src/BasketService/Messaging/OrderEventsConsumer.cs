@@ -11,60 +11,53 @@ namespace Microsoft.eShopWeb.BasketService.Messaging;
 /// fanout and clears the basket when an order is placed. OrderService knows nothing about this —
 /// it publishes to a fanout and we choose to listen, which is the point of the exchange.
 /// </summary>
-public class OrderEventsConsumer : BackgroundService
+public class OrderEventsConsumer : RabbitMqConsumerService
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
-    private readonly IRabbitMqConnection _connection;
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<OrderEventsConsumer> _logger;
-    private IChannel? _channel;
 
     public OrderEventsConsumer(IRabbitMqConnection connection, IServiceScopeFactory scopeFactory,
         ILogger<OrderEventsConsumer> logger)
+        : base(connection, logger)
     {
-        _connection = connection;
         _scopeFactory = scopeFactory;
         _logger = logger;
     }
 
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    protected override async Task ConfigureAsync(IChannel channel, CancellationToken cancellationToken)
     {
-        var connection = await _connection.GetAsync(stoppingToken);
-        _channel = await connection.CreateChannelAsync(cancellationToken: stoppingToken);
-
         // Declared here too, not just by OrderService: whichever service starts first creates it,
         // and declaring is idempotent as long as the arguments agree (fanout, durable).
-        await _channel.ExchangeDeclareAsync(OrderEventsExchange.Name, ExchangeType.Fanout, durable: true,
-            autoDelete: false, cancellationToken: stoppingToken);
+        await channel.ExchangeDeclareAsync(OrderEventsExchange.Name, ExchangeType.Fanout, durable: true,
+            autoDelete: false, cancellationToken: cancellationToken);
 
         // Our own durable queue, so orders placed while this service is down are still waiting for
         // it on restart. A second subscriber to order-events would declare its own queue instead of
         // sharing this one, and get its own copy of every event.
-        await _channel.QueueDeclareAsync(BasketMessaging.OrderEventsQueue, durable: true, exclusive: false,
+        await channel.QueueDeclareAsync(BasketMessaging.OrderEventsQueue, durable: true, exclusive: false,
             autoDelete: false,
             arguments: new Dictionary<string, object?> { ["x-dead-letter-exchange"] = BasketMessaging.InvalidExchange },
-            cancellationToken: stoppingToken);
-        await _channel.QueueBindAsync(BasketMessaging.OrderEventsQueue, OrderEventsExchange.Name,
-            routingKey: string.Empty, cancellationToken: stoppingToken);
+            cancellationToken: cancellationToken);
+        await channel.QueueBindAsync(BasketMessaging.OrderEventsQueue, OrderEventsExchange.Name,
+            routingKey: string.Empty, cancellationToken: cancellationToken);
 
-        await _channel.BasicQosAsync(prefetchSize: 0, prefetchCount: 1, global: false, cancellationToken: stoppingToken);
+        await channel.BasicQosAsync(prefetchSize: 0, prefetchCount: 1, global: false, cancellationToken: cancellationToken);
 
-        var consumer = new AsyncEventingBasicConsumer(_channel);
+        var consumer = new AsyncEventingBasicConsumer(channel);
         consumer.ReceivedAsync += OnReceivedAsync;
 
-        await _channel.BasicConsumeAsync(BasketMessaging.OrderEventsQueue, autoAck: false, consumer: consumer,
-            cancellationToken: stoppingToken);
+        await channel.BasicConsumeAsync(BasketMessaging.OrderEventsQueue, autoAck: false, consumer: consumer,
+            cancellationToken: cancellationToken);
 
         _logger.LogInformation("Consuming {Queue}, bound to {Exchange}",
             BasketMessaging.OrderEventsQueue, OrderEventsExchange.Name);
-
-        await Task.Delay(Timeout.Infinite, stoppingToken);
     }
 
     private async Task OnReceivedAsync(object sender, BasicDeliverEventArgs ea)
     {
-        var channel = _channel!;
+        var channel = Channel;
 
         // The fanout carries every order event, and the Type property is how the publisher says
         // which. Anything else is somebody else's message: ack it rather than dead-lettering, or we
@@ -100,13 +93,4 @@ public class OrderEventsConsumer : BackgroundService
         }
     }
 
-    public override async Task StopAsync(CancellationToken cancellationToken)
-    {
-        await base.StopAsync(cancellationToken);
-        if (_channel is not null)
-        {
-            await _channel.CloseAsync(cancellationToken);
-            await _channel.DisposeAsync();
-        }
-    }
 }
