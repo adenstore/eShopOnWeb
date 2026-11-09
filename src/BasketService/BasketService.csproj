@@ -21,4 +21,12 @@
     <PackageReference Include="RabbitMQ.Client" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- For OrderCreatedIntegrationEvent and the order-events exchange name. A subscriber
+         referencing the publisher's contracts project is the same arrangement ApplicationCore
+         already uses; copying the event shape instead would let the two drift silently, and
+         nothing validates a message against a schema at runtime to catch it. -->
+    <ProjectReference Include="..\..\OrderService\OrderService.Contracts\OrderService.Contracts.csproj" />
+  </ItemGroup>
+
 </Project>
