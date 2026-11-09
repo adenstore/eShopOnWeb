@@ -30,6 +30,14 @@ services:
      - ASPNETCORE_URLS=http://+:8080
    ports:
      - "5400:8080"
+ eshopbasketservice:
+   environment:
+     - ASPNETCORE_ENVIRONMENT=Docker
+     - ASPNETCORE_URLS=http://+:8080
+   # Only /health is served over HTTP; the service's real interface is the RabbitMQ queues.
+   # The port matches launchSettings so a local run and a compose run look the same.
+   ports:
+     - "5198:8080"
  eshopapigateway:
    environment:
      - ASPNETCORE_ENVIRONMENT=Docker
