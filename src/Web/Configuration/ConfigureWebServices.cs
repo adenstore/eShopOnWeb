@@ -1,5 +1,6 @@
 ﻿using MediatR;
 using Microsoft.eShopWeb.Web.Interfaces;
+using Microsoft.eShopWeb.Web.Messaging;
 using Microsoft.eShopWeb.Web.Services;
 
 namespace Microsoft.eShopWeb.Web.Configuration;
@@ -33,6 +34,15 @@ public static class ConfigureWebServices
             services.AddKeyedScoped<ICatalogViewModelService, CatalogViewModelService>(CachedCatalogViewModelService.UncachedServiceKey);
         }
         services.AddScoped<ICatalogViewModelService, CachedCatalogViewModelService>();
+
+        // Keeps the monolith's own catalog copy (CatalogDb) in sync with CatalogService through RabbitMQ events,
+        // because the basket page and checkout still read product data from CatalogDb. See Messaging/CatalogEventSync.cs.
+        if (configuration.GetValue<bool>("SyncCatalogFromEvents"))
+        {
+            services.Configure<RabbitMqSettings>(configuration.GetSection(RabbitMqSettings.SectionName));
+            services.AddScoped<CatalogEventSync>();
+            services.AddHostedService<CatalogEventsListener>();
+        }
 
         return services;
     }
