@@ -20,8 +20,7 @@ public class BasketService : IBasketService
 
     public async Task<Basket> GetOrCreateBasketAsync(string buyerId)
     {
-        var basketSpec = new BasketWithItemsSpecification(buyerId);
-        var basket = await _basketRepository.FirstOrDefaultAsync(basketSpec);
+        var basket = await GetBasketByBuyerAsync(buyerId);
 
         if (basket == null)
         {
@@ -30,6 +29,13 @@ public class BasketService : IBasketService
         }
 
         return basket;
+    }
+
+    public async Task<Basket?> GetBasketByBuyerAsync(string buyerId)
+    {
+        var basketSpec = new BasketWithItemsSpecification(buyerId);
+
+        return await _basketRepository.FirstOrDefaultAsync(basketSpec);
     }
 
     public async Task<Basket?> GetBasketAsync(int basketId)

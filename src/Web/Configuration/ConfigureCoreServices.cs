@@ -17,20 +17,20 @@ public static class ConfigureCoreServices
 
         services.AddScoped<IOrderService, OrderCheckoutService>();
 
-        // Orders live in their own microservice (OrderService/OrderService); the Web app calls it over HTTP.
+        // Orders live in their own microservice (OrderService/OrderService); the Web app calls it over HTTP through the ApiGateway.
         services.AddHttpClient<IOrderApiClient, OrderApiClient>(client =>
         {
-            var orderServiceBaseUrl = configuration["OrderServiceBaseUrl"] ?? "http://localhost:5300/";
+            var orderServiceBaseUrl = configuration["OrderServiceBaseUrl"] ?? "http://localhost:5278/";
             client.BaseAddress = new Uri(orderServiceBaseUrl);
         });
 
-        services.AddHttpClient<BasketApiClient>(client =>
-        {
-            var basketServiceBaseUrl = configuration["BasketServiceBaseUrl"] ?? "http://localhost:5198/";
-            client.BaseAddress = new Uri(basketServiceBaseUrl);
-        });
-        services.AddTransient<IBasketService>(sp => sp.GetRequiredService<BasketApiClient>());
-        services.AddTransient<IBasketQueryService>(sp => sp.GetRequiredService<BasketApiClient>());
+        // Basket runs in-process again while BasketService's transport is rebuilt on RabbitMQ.
+        // Its REST API is being deleted, so there is nothing left for BasketApiClient to call.
+        // The client and the BasketServiceBaseUrl config key are kept but unregistered: the Web
+        // app is the frontend, so it keeps speaking REST once the gateway is in place — it will
+        // point at the gateway rather than at the service, and the gateway does the publishing.
+        services.AddScoped<IBasketService, ApplicationCore.Services.BasketService>();
+        services.AddScoped<IBasketQueryService, Infrastructure.Data.Queries.BasketQueryService>();
 
         var catalogSettings = configuration.Get<CatalogSettings>() ?? new CatalogSettings();
         services.AddSingleton<IUriComposer>(new UriComposer(catalogSettings));

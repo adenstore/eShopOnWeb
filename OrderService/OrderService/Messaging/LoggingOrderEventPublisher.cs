@@ -3,7 +3,7 @@ using Microsoft.eShopWeb.OrderService.Contracts.Events;
 namespace Microsoft.eShopWeb.OrderService.Messaging;
 
 /// <summary>
-/// Placeholder publisher that only logs the event. Replace with a RabbitMQ publisher.
+/// Publisher that only logs the event. Used by the tests instead of <see cref="RabbitMqOrderEventPublisher"/>.
 /// </summary>
 public class LoggingOrderEventPublisher : IOrderEventPublisher
 {

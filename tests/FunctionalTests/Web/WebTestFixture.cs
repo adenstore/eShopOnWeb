@@ -58,9 +58,11 @@ public class TestApplication : WebApplicationFactory<IBasketViewModelService>
             services.RemoveAll<IOrderApiClient>();
             services.AddSingleton<IOrderApiClient, FakeOrderApiClient>();
 
-            // Basket is a microservice in production, reached over HTTP by BasketApiClient.
-            // Run the in-process implementation here instead, against the in-memory database
-            // above, so these tests need no live service and still exercise real basket rules.
+            // Basket currently runs in-process in production too, so this swap is a no-op for
+            // now. It is kept deliberately: once the Web app talks to the gateway over RabbitMQ,
+            // production will register a publishing client again and these tests need the
+            // in-process implementation against the in-memory database above, so that they
+            // require no live service or broker and still exercise real basket rules.
             services.RemoveAll<IBasketService>();
             services.RemoveAll<IBasketQueryService>();
             services.AddScoped<IBasketService, ApplicationCore.Services.BasketService>();

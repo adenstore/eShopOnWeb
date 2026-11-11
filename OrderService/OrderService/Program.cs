@@ -19,8 +19,9 @@ builder.Services.AddDbContext<OrderDbContext>(options =>
     }
 });
 
-// TODO RabbitMQ: register a RabbitMQ-backed IOrderEventPublisher here instead.
-builder.Services.AddScoped<IOrderEventPublisher, LoggingOrderEventPublisher>();
+// New orders are published to RabbitMQ ("order-events" exchange) so other services can react to them.
+builder.Services.Configure<RabbitMqSettings>(builder.Configuration.GetSection(RabbitMqSettings.SectionName));
+builder.Services.AddSingleton<IOrderEventPublisher, RabbitMqOrderEventPublisher>();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+using FluentAssertions;
+using System.Collections.Generic;
 using Microsoft.eShopWeb.OrderService.Domain;
 using Microsoft.eShopWeb.OrderService.Tests.Builders;
 using Xunit;
@@ -14,7 +15,7 @@ public class OrderTotal
     {
         var order = new OrderBuilder().WithNoItems();
 
-        Assert.Equal(0, order.Total());
+        order.Total().Should().Be(0);
     }
 
     [Fact]
@@ -26,7 +27,7 @@ public class OrderTotal
                 new OrderItem(builder.TestCatalogItemOrdered, _testUnitPrice, 1)
             };
         var order = new OrderBuilder().WithItems(items);
-        Assert.Equal(_testUnitPrice, order.Total());
+        order.Total().Should().Be(_testUnitPrice);
     }
 
     [Fact]
@@ -35,6 +36,6 @@ public class OrderTotal
         var builder = new OrderBuilder();
         var order = builder.WithDefaultValues();
 
-        Assert.Equal(builder.TestUnitPrice * builder.TestUnits, order.Total());
+        order.Total().Should().Be(builder.TestUnitPrice * builder.TestUnits);
     }
 }
