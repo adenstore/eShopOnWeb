@@ -4,6 +4,9 @@ services:
    environment:
      - ASPNETCORE_ENVIRONMENT=Docker
      - ASPNETCORE_URLS=http://+:8080
+     # The catalog-sync listener (Web/Messaging) logs in to RabbitMQ with the user from .env.
+     - RabbitMQ__UserName=${RABBITMQ_USER}
+     - RabbitMQ__Password=${RABBITMQ_PASS}
    ports:
      - "5106:8080"
    volumes:
@@ -32,6 +35,10 @@ services:
    environment:
      - ASPNETCORE_ENVIRONMENT=Docker
      - ASPNETCORE_URLS=http://+:8080
+     # Secrets come from .env and override appsettings.Docker.json, as for the other services.
+     - ConnectionStrings__CatalogConnection=Server=sqlserver,1433;Initial Catalog=Microsoft.eShopOnWeb.CatalogServiceDb;User Id=sa;Password=${SA_PASSWORD};TrustServerCertificate=true;
+     - RabbitMQ__UserName=${RABBITMQ_USER}
+     - RabbitMQ__Password=${RABBITMQ_PASS}
    ports:
      - "5400:8080"
  eshopbasketservice:
