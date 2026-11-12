@@ -10,25 +10,38 @@ namespace Microsoft.eShopWeb.ApplicationCore.Services;
 
 /// <summary>
 /// Turns a basket into an order request and hands it to the Order microservice.
-/// Basket and catalog still live in the monolith, so the item details are
-/// snapshotted here before they are sent.
+/// Basket still lives in the monolith; product details (name, picture) are read from
+/// CatalogService through <see cref="ICatalogItemLookup"/> and snapshotted here before they are sent.
 /// </summary>
 public class OrderCheckoutService : IOrderService
 {
     private readonly IOrderApiClient _orderApiClient;
-    private readonly IUriComposer _uriComposer;
+    // Commented out on purpose: product name and picture used to be read from the monolith's CatalogDb through
+    // IRepository<CatalogItem>, and the picture path was turned into a URL with IUriComposer. They are now read
+    // from CatalogService through ICatalogItemLookup (which returns a complete picture URL), so the monolith's
+    // catalog code can be removed. Old lines are kept here for reference.
+    //private readonly IUriComposer _uriComposer;
     private readonly IBasketService _basketService;
-    private readonly IRepository<CatalogItem> _itemRepository;
+    //private readonly IRepository<CatalogItem> _itemRepository;
+    private readonly ICatalogItemLookup _catalogItemLookup;
 
+    //public OrderCheckoutService(IBasketService basketService,
+    //    IRepository<CatalogItem> itemRepository,
+    //    IOrderApiClient orderApiClient,
+    //    IUriComposer uriComposer)
+    //{
+    //    _orderApiClient = orderApiClient;
+    //    _uriComposer = uriComposer;
+    //    _basketService = basketService;
+    //    _itemRepository = itemRepository;
+    //}
     public OrderCheckoutService(IBasketService basketService,
-        IRepository<CatalogItem> itemRepository,
-        IOrderApiClient orderApiClient,
-        IUriComposer uriComposer)
+        ICatalogItemLookup catalogItemLookup,
+        IOrderApiClient orderApiClient)
     {
         _orderApiClient = orderApiClient;
-        _uriComposer = uriComposer;
         _basketService = basketService;
-        _itemRepository = itemRepository;
+        _catalogItemLookup = catalogItemLookup;
     }
 
     public async Task<int> CreateOrderAsync(int basketId, AddressDto shippingAddress)
@@ -38,14 +51,20 @@ public class OrderCheckoutService : IOrderService
         Guard.Against.Null(basket, nameof(basket));
         Guard.Against.EmptyBasketOnCheckout(basket.Items);
 
-        var catalogItemsSpecification = new CatalogItemsSpecification(basket.Items.Select(item => item.CatalogItemId).ToArray());
-        var catalogItems = await _itemRepository.ListAsync(catalogItemsSpecification);
+        // Commented out on purpose: product details come from CatalogService instead of the monolith's CatalogDb (see above).
+        //var catalogItemsSpecification = new CatalogItemsSpecification(basket.Items.Select(item => item.CatalogItemId).ToArray());
+        //var catalogItems = await _itemRepository.ListAsync(catalogItemsSpecification);
+        var catalogItems = await _catalogItemLookup.GetCatalogItemsAsync(basket.Items.Select(item => item.CatalogItemId));
 
         var items = basket.Items.Select(basketItem =>
         {
             var catalogItem = catalogItems.First(c => c.Id == basketItem.CatalogItemId);
+            // Commented out on purpose: CatalogService already returns a complete picture URL,
+            // so it must not be run through ComposePicUri a second time.
+            //return new CreateOrderItemDto(catalogItem.Id, catalogItem.Name,
+            //    _uriComposer.ComposePicUri(catalogItem.PictureUri), basketItem.UnitPrice, basketItem.Quantity);
             return new CreateOrderItemDto(catalogItem.Id, catalogItem.Name,
-                _uriComposer.ComposePicUri(catalogItem.PictureUri), basketItem.UnitPrice, basketItem.Quantity);
+                catalogItem.PictureUri, basketItem.UnitPrice, basketItem.Quantity);
         }).ToList();
 
         return await _orderApiClient.CreateOrderAsync(new CreateOrderRequest(basket.BuyerId, shippingAddress, items));

@@ -26,6 +26,8 @@ public static class ConfigureWebServices
             var catalogServiceBaseUrl = configuration["CatalogServiceBaseUrl"] ?? "http://localhost:5400/";
             client.BaseAddress = new Uri(catalogServiceBaseUrl);
         });
+        // Checkout (ApplicationCore's OrderCheckoutService) reads product details from CatalogService through this.
+        services.AddScoped<ApplicationCore.Interfaces.ICatalogItemLookup, CatalogApiItemLookup>();
 
         // The catalog is being moved into its own microservice (CatalogService/). With "UseCatalogService": true
         // the storefront reads products from it over HTTP; set it to false to fall back to the monolith's database.
