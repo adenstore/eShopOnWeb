@@ -12,17 +12,31 @@ public class BasketViewModelService : IBasketViewModelService
     private readonly IBasketService _basketService;
     private readonly IUriComposer _uriComposer;
     private readonly IBasketQueryService _basketQueryService;
-    private readonly IRepository<CatalogItem> _itemRepository;
+    // Commented out on purpose: product name and picture for each basket line used to be read from the
+    // monolith's CatalogDb through IRepository<CatalogItem>. They are now read from CatalogService through
+    // ICatalogApiClient, so the monolith's catalog code can be removed. Old lines are kept here for reference.
+    //private readonly IRepository<CatalogItem> _itemRepository;
+    private readonly ICatalogApiClient _catalogApiClient;
 
+    //public BasketViewModelService(IBasketService basketService,
+    //    IRepository<CatalogItem> itemRepository,
+    //    IUriComposer uriComposer,
+    //    IBasketQueryService basketQueryService)
+    //{
+    //    _basketService = basketService;
+    //    _uriComposer = uriComposer;
+    //    _basketQueryService = basketQueryService;
+    //    _itemRepository = itemRepository;
+    //}
     public BasketViewModelService(IBasketService basketService,
-        IRepository<CatalogItem> itemRepository,
+        ICatalogApiClient catalogApiClient,
         IUriComposer uriComposer,
         IBasketQueryService basketQueryService)
     {
         _basketService = basketService;
         _uriComposer = uriComposer;
         _basketQueryService = basketQueryService;
-        _itemRepository = itemRepository;
+        _catalogApiClient = catalogApiClient;
     }
 
     public async Task<BasketViewModel> GetOrCreateBasketForUser(string userName)
@@ -34,8 +48,14 @@ public class BasketViewModelService : IBasketViewModelService
 
     private async Task<List<BasketItemViewModel>> GetBasketItems(IReadOnlyCollection<BasketItemDto> basketItems)
     {
-        var catalogItemsSpecification = new CatalogItemsSpecification(basketItems.Select(b => b.CatalogItemId).ToArray());
-        var catalogItems = await _itemRepository.ListAsync(catalogItemsSpecification);
+        // Commented out on purpose: the catalog items are fetched from CatalogService instead of the monolith's
+        // CatalogDb (see the constructor). CatalogService has no "get many by id" endpoint, so each distinct
+        // item is fetched by id; the requests run in parallel, and a basket only holds a handful of items.
+        //var catalogItemsSpecification = new CatalogItemsSpecification(basketItems.Select(b => b.CatalogItemId).ToArray());
+        //var catalogItems = await _itemRepository.ListAsync(catalogItemsSpecification);
+        var catalogItemIds = basketItems.Select(b => b.CatalogItemId).Distinct();
+        var fetchedItems = await Task.WhenAll(catalogItemIds.Select(id => _catalogApiClient.GetCatalogItemAsync(id)));
+        var catalogItems = fetchedItems.Where(c => c != null).Select(c => c!).ToList();
 
         var items = basketItems.Select(basketItem =>
         {
@@ -47,7 +67,10 @@ public class BasketViewModelService : IBasketViewModelService
                 UnitPrice = basketItem.UnitPrice,
                 Quantity = basketItem.Quantity,
                 CatalogItemId = basketItem.CatalogItemId,
-                PictureUrl = _uriComposer.ComposePicUri(catalogItem.PictureUri),
+                // Commented out on purpose: CatalogService already returns a complete picture URL,
+                // so it must not be run through ComposePicUri a second time.
+                //PictureUrl = _uriComposer.ComposePicUri(catalogItem.PictureUri),
+                PictureUrl = catalogItem.PictureUri,
                 ProductName = catalogItem.Name
             };
             return basketItemViewModel;

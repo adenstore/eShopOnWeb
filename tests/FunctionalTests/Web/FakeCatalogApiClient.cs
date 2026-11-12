@@ -62,6 +62,11 @@ public class FakeCatalogApiClient : ICatalogApiClient
         return Task.FromResult<IReadOnlyList<CatalogTypeDto>>(Types);
     }
 
+    public Task<CatalogItemDto?> GetCatalogItemAsync(int catalogItemId, CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(Items.FirstOrDefault(i => i.Id == catalogItemId));
+    }
+
     private static CatalogItemDto Item(int id, int typeId, int brandId, string name, decimal price) => new()
     {
         Id = id,
