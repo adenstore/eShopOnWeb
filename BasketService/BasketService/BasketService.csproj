@@ -22,6 +22,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- The message shapes and topology names this service owns, in their own assembly so that a
+         caller can publish to it without compiling against the DbContext behind it. -->
+    <ProjectReference Include="..\BasketService.Contracts\BasketService.Contracts.csproj" />
+
     <!-- For OrderCreatedIntegrationEvent and the order-events exchange name. A subscriber
          referencing the publisher's contracts project is the same arrangement ApplicationCore
          already uses; copying the event shape instead would let the two drift silently, and

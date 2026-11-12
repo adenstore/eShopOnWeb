@@ -28,7 +28,7 @@ public class BasketMessageHandler
         var basket = await _basketService.AddItemToBasket(
             command.BuyerId, command.CatalogItemId, command.UnitPrice, command.Quantity);
 
-        await _events.PublishBasketChangedAsync(BasketSnapshot.FromBasket(basket), cancellationToken);
+        await _events.PublishBasketChangedAsync(basket.ToSnapshot(), cancellationToken);
     }
 
     public async Task HandleAsync(SetBasketQuantitiesCommand command, CancellationToken cancellationToken = default)
@@ -44,7 +44,7 @@ public class BasketMessageHandler
             return;
         }
 
-        await _events.PublishBasketChangedAsync(BasketSnapshot.FromBasket(result.Value), cancellationToken);
+        await _events.PublishBasketChangedAsync(result.Value.ToSnapshot(), cancellationToken);
     }
 
     public async Task HandleAsync(TransferBasketCommand command, CancellationToken cancellationToken = default)
@@ -67,7 +67,7 @@ public class BasketMessageHandler
         var userBasket = await _basketService.GetBasketByBuyerAsync(command.UserName);
         if (userBasket is not null)
         {
-            await _events.PublishBasketChangedAsync(BasketSnapshot.FromBasket(userBasket), cancellationToken);
+            await _events.PublishBasketChangedAsync(userBasket.ToSnapshot(), cancellationToken);
         }
         await _events.PublishBasketChangedAsync(
             BasketSnapshot.Empty(anonymousBasketId, command.AnonymousId), cancellationToken);
@@ -105,7 +105,7 @@ public class BasketMessageHandler
 
         return basket is null
             ? BasketQueryReply.NotFound()
-            : BasketQueryReply.Found(BasketSnapshot.FromBasket(basket));
+            : BasketQueryReply.Found(basket.ToSnapshot());
     }
 
     public async Task<BasketQueryReply> HandleAsync(GetBasketByIdRequest request, CancellationToken cancellationToken = default)
@@ -114,6 +114,6 @@ public class BasketMessageHandler
 
         return basket is null
             ? BasketQueryReply.NotFound()
-            : BasketQueryReply.Found(BasketSnapshot.FromBasket(basket));
+            : BasketQueryReply.Found(basket.ToSnapshot());
     }
 }

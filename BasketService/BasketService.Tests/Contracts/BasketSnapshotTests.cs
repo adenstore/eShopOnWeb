@@ -1,4 +1,5 @@
 using Microsoft.eShopWeb.BasketService.Contracts;
+using Microsoft.eShopWeb.BasketService.Messaging;
 using Microsoft.eShopWeb.BasketService.Tests.Builders;
 using Xunit;
 
@@ -12,7 +13,7 @@ public class BasketSnapshotTests
         var builder = new BasketBuilder();
         var basket = builder.WithOneBasketItem();
 
-        var snapshot = BasketSnapshot.FromBasket(basket);
+        var snapshot = basket.ToSnapshot();
 
         Assert.Equal(basket.BuyerId, snapshot.BuyerId);
         var item = Assert.Single(snapshot.Items);
@@ -29,7 +30,7 @@ public class BasketSnapshotTests
         var basket = new BasketBuilder().WithOneBasketItem();
         basket.AddItem(3, 1.00m, 2);
 
-        Assert.Equal(6, BasketSnapshot.FromBasket(basket).TotalItems);
+        Assert.Equal(6, basket.ToSnapshot().TotalItems);
     }
 
     [Fact]

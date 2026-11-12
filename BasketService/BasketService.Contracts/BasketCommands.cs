@@ -41,9 +41,10 @@ public record SetBasketQuantitiesCommand
     public int BasketId { get; init; }
 
     /// <summary>
-    /// Keyed by basket *item* id as a string — the shape
-    /// <see cref="Interfaces.IBasketService.SetQuantities"/> already expects. An empty map is
-    /// valid and no-ops; a quantity of 0 removes the item.
+    /// Keyed by basket *item* id as a string — the shape the service's own
+    /// <c>IBasketService.SetQuantities</c> already expects, and the one
+    /// <see cref="BasketItemSnapshot.Id"/> round-trips so a caller can address the items it just
+    /// rendered. An empty map is valid and no-ops; a quantity of 0 removes the item.
     /// </summary>
     [Required]
     public Dictionary<string, int> Quantities { get; init; } = new();

@@ -1,5 +1,3 @@
-using Microsoft.eShopWeb.BasketService.Domain;
-
 namespace Microsoft.eShopWeb.BasketService.Contracts;
 
 /// <summary>
@@ -22,11 +20,6 @@ public record BasketSnapshot(int BasketId, string BuyerId, IReadOnlyList<BasketI
     /// </summary>
     public int TotalItems => Items.Sum(i => i.Quantity);
 
-    public static BasketSnapshot FromBasket(Basket basket) => new(
-        basket.Id,
-        basket.BuyerId,
-        basket.Items.Select(BasketItemSnapshot.FromBasketItem).ToList());
-
     /// <summary>
     /// The state of a basket that no longer exists. Published after checkout clears one: readers
     /// apply full state unconditionally, so an empty snapshot needs no separate "deleted" event
@@ -41,8 +34,4 @@ public record BasketSnapshot(int BasketId, string BuyerId, IReadOnlyList<BasketI
 /// <see cref="SetBasketQuantitiesCommand.Quantities"/> is addressed by, so a reader that renders a
 /// basket for editing has to round-trip it.
 /// </summary>
-public record BasketItemSnapshot(int Id, int CatalogItemId, decimal UnitPrice, int Quantity)
-{
-    public static BasketItemSnapshot FromBasketItem(BasketItem item) =>
-        new(item.Id, item.CatalogItemId, item.UnitPrice, item.Quantity);
-}
+public record BasketItemSnapshot(int Id, int CatalogItemId, decimal UnitPrice, int Quantity);
