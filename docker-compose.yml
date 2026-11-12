@@ -61,6 +61,8 @@ services:
       - "eshopcatalogservice"
       - "eshoporderservice"
       - "eshoplagerservice"
+      # The basket routes are not proxied: the gateway publishes them to RabbitMQ itself.
+      - "rabbitmq"
   sqlserver:
     image: mcr.microsoft.com/azure-sql-edge
     ports:

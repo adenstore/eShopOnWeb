@@ -8,6 +8,15 @@
 
   <ItemGroup>
     <PackageReference Include="Ocelot" />
+    <!-- Basket is not proxied over HTTP: the gateway turns those REST calls into messages itself. -->
+    <PackageReference Include="RabbitMQ.Client" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The message shapes and exchange/routing-key names BasketService publishes for its callers.
+         They are in their own assembly precisely so the gateway can publish to it without
+         compiling against the service's DbContext and consumers. -->
+    <ProjectReference Include="..\..\BasketService\BasketService.Contracts\BasketService.Contracts.csproj" />
   </ItemGroup>
 
 </Project>

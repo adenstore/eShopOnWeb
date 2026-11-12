@@ -162,10 +162,13 @@ dotnet test BasketService/BasketService.IntegrationTests   # needs a container r
 
 ## Still to do
 
-- **The gateway.** Nothing publishes to these exchanges yet. The Web app still serves basket
-  in-process (see `ConfigureCoreServices.cs`); `BasketApiClient` is kept, unregistered, to become
-  the frontend→gateway client. Ocelot cannot do this — it is an HTTP proxy with no AMQP transport —
-  so these become hand-written endpoints that publish.
+- **The gateway's read routes.** The writes are done: `src/ApiGateway` publishes `Basket.addItem`,
+  `Basket.setQuantities` and `Basket.transfer` from hand-written REST endpoints (see
+  `src/ApiGateway/README.md`). The two queries still have no caller, because they need the
+  projection below.
+- **Nothing calls the gateway yet.** The Web app still serves basket in-process (see
+  `ConfigureCoreServices.cs`); `BasketApiClient` is kept, unregistered, to become the
+  frontend→gateway client.
 - **The read projection**, planned for Redis so it survives a gateway restart and works with more
   than one gateway instance.
 - **Its own database.** `BasketConnection` points at a separate `BasketDb` but the monolith still
