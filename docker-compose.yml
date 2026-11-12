@@ -39,7 +39,7 @@ services:
     image: ${DOCKER_REGISTRY-}eshopbasketservice
     build:
       context: .
-      dockerfile: src/BasketService/Dockerfile
+      dockerfile: BasketService/BasketService/Dockerfile
     depends_on:
       - "sqlserver"
       - "rabbitmq"
