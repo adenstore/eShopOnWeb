@@ -5,8 +5,7 @@ using Microsoft.eShopWeb.Web.ViewModels;
 namespace Microsoft.eShopWeb.Web.Services;
 
 /// <summary>
-/// Builds the storefront's catalog view models from the Catalog microservice instead of the
-/// monolith's own catalog database. Same output as <see cref="CatalogViewModelService"/>.
+/// Builds the storefront's catalog view models from the Catalog microservice.
 /// </summary>
 public class CatalogApiViewModelService : ICatalogViewModelService
 {

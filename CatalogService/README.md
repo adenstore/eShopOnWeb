@@ -1,6 +1,6 @@
 # CatalogService (microservice)
 
-Katalog-delen af eShopOnWeb (varer, mærker og typer) er trukket ud af monolitten og kører som sin egen service med sin egen database (`Microsoft.eShopOnWeb.CatalogServiceDb`). Udtrækningen er lavet efter **strangler-mønsteret**: trafikken er flyttet over til den nye service, men monolittens gamle katalog står der stadig, indtil intet bruger det længere.
+Katalog-delen af eShopOnWeb (varer, mærker og typer) er trukket ud af monolitten og kører som sin egen service med sin egen database (`Microsoft.eShopOnWeb.CatalogServiceDb`). Udtrækningen er lavet efter **strangler-mønsteret**: koden lå begge steder, mens trafikken blev flyttet over til den nye service, og da intet i monolitten længere brugte det gamle katalog, blev det slettet. Kataloget findes nu kun i CatalogService.
 
 ## Hvorfor grænsen ligger her
 
@@ -34,33 +34,32 @@ Endpoints, specifikationer og entiteter er flyttet fra monolittens `PublicApi` o
 
 ```
 BlazorAdmin (browser) ──REST──► ApiGateway ──► CatalogService ──► CatalogServiceDb
-Web, forsiden ─────────REST (CatalogApiClient)──►      │
-                                                       │ CatalogItemCreated/Updated/Deleted
+Web: forside, kurv ────REST (ICatalogApiClient)──►     │
+Web: checkout ─────────REST (ICatalogItemLookup)─►     │ CatalogItemCreated/Updated/Deleted
                                                        ▼
                                       RabbitMQ exchange "catalog-events" (fanout)
-                                                       │
-                                                       ▼ kø "web.catalog-sync"
-                              Web: CatalogEventsListener → CatalogEventSync → monolittens CatalogDb
-                                                                                    ▲
-                                                 kurv og checkout læser stadig herfra
 ```
 
 - **BlazorAdmin** (admin-siderne) kalder gatewayen, som sender `/api/catalog-items`, `/api/catalog-items/{id}`, `/api/catalog-brands` og `/api/catalog-types` videre til CatalogService.
-- **Web's forside** (produktlisten med filtre) læser fra CatalogService via `ICatalogApiClient`, når `"UseCatalogService": true`. Svarene caches som før af `CachedCatalogViewModelService`.
-- **Kurv og checkout** i monolitten læser stadig varer fra monolittens egen `CatalogDb`. Den holdes opdateret af `Web/Messaging`, som lytter på CatalogService's events (se nedenfor).
+- **Web's forside** (produktlisten med filtre) læser fra CatalogService via `ICatalogApiClient`. Svarene caches som før af `CachedCatalogViewModelService`.
+- **Kurven** (`Web/Pages/Basket/Index.cshtml.cs` og `Web/Services/BasketViewModelService.cs`) henter pris, navn og billede fra CatalogService via `ICatalogApiClient.GetCatalogItemAsync`.
+- **Checkout** (`ApplicationCore/Services/OrderCheckoutService.cs`) henter navn og billede til ordrens snapshot via `ICatalogItemLookup`. Interfacet ligger i ApplicationCore, fordi ApplicationCore ikke må referere til Web; implementeringen (`Web/Services/CatalogApiItemLookup.cs`) bruger `ICatalogApiClient`.
 
-## Hvad der stadig ligger i monolitten
+## Fjernet fra monolitten
 
-| Hvad | Hvor | Hvorfor det ikke er fjernet endnu |
-|---|---|---|
-| Katalog-entiteter og -tabeller | `ApplicationCore/Entities`, `Infrastructure/Data/CatalogContext.cs` (tabellerne `Catalog`, `CatalogBrands`, `CatalogTypes` i `CatalogDb`) | Kurv og checkout læser dem (næste række). `CatalogDb` indeholder også kurvens tabeller, så databasen bliver under alle omstændigheder. |
-| Opslag fra kurv og checkout | `Web/Pages/Basket/Index.cshtml.cs` (pris), `Web/Services/BasketViewModelService.cs` (navn, billede), `ApplicationCore/Services/OrderCheckoutService.cs` (snapshot til ordren) | Det er kurv-koden, som ejes af en anden i gruppen. Den skal over på `ICatalogApiClient`, før monolittens katalog kan slettes. |
-| Synkronisering af `CatalogDb` | `Web/Messaging` (`CatalogEventsListener`, `CatalogEventSync`), slås til med `"SyncCatalogFromEvents": true` | Holder kopien opdateret, så kurven ser varer, der er oprettet eller rettet i CatalogService. Midlertidig bro, der skal slettes sammen med katalog-entiteterne. |
-| Gammel visning af forsiden fra databasen | `Web/Services/CatalogViewModelService.cs`, bruges når `"UseCatalogService": false` | Fallback, så man kan skifte tilbage under migreringen. |
-| PublicApi's katalog-endpoints | `src/PublicApi/Catalog*Endpoints` | Bliver ikke kaldt længere, fordi gatewayen sender katalog-ruterne til CatalogService. De er ladt stå for ikke at ændre i monolitten. |
-| Gammel Razor-admin-side | `Web/Pages/Admin/EditCatalogItem` | Kan ikke nås og er kommenteret ud. Den skrev direkte i `CatalogDb` og ville derfor gå uden om CatalogService. |
+Da kurv og checkout spurgte CatalogService, brugte intet i monolitten længere dens eget katalog, og det blev slettet:
 
-Rækkefølgen for at blive helt færdig er: (1) kurv og checkout spørger CatalogService i stedet for `CatalogDb`, (2) sync og fallback slettes, (3) katalog-entiteterne slettes, og en migration fjerner de tre tabeller fra `CatalogDb`.
+| Hvad | Hvor det lå |
+|---|---|
+| Katalog-entiteter, specifikationer, `CatalogSettings`, `IUriComposer`/`UriComposer` | `src/ApplicationCore` |
+| EF-konfigurationer og seed-data for kataloget | `src/Infrastructure/Data` |
+| Katalog-endpoints og `MappingProfile` | `src/PublicApi` (gatewayen sender allerede katalog-ruterne til CatalogService) |
+| Synkronisering af monolittens katalog-kopi (`CatalogEventsListener`, `CatalogEventSync`) og fallback til databasen (`CatalogViewModelService`) samt flagene `UseCatalogService` og `SyncCatalogFromEvents` | `src/Web` |
+| Tabellerne `Catalog`, `CatalogBrands` og `CatalogTypes` | Monolittens database; fjernet af migrationen `MoveCatalogToCatalogService` (samme fremgangsmåde som `MoveOrdersToOrderService`) |
+
+Tilbage i monolitten er kun:
+- `Infrastructure/Data/CatalogContext.cs`, som trods navnet nu kun indeholder kurvens tabeller. Navnet er bevaret, så kurv-koden og de eksisterende migrations ikke skal ændres. Migrations køres ved opstart af `CatalogContextMigrator` (tidligere gjorde seed-klassen det).
+- Den gamle Razor-admin-side `Web/Pages/Admin/EditCatalogItem`, som er kommenteret ud og ikke kan nås.
 
 ## API
 
@@ -90,7 +89,7 @@ Efter hver ændring, når den er gemt, publicerer endpointet et event via `ICata
 - **Exchange:** `catalog-events` (fanout, durable). Navnet ligger i `CatalogService.Contracts` (`CatalogEventsExchange.Name`).
 - **Events:** `CatalogItemCreatedIntegrationEvent`, `CatalogItemUpdatedIntegrationEvent`, `CatalogItemDeletedIntegrationEvent`. Created og Updated har varens **fulde tilstand**, så en modtager bare kan overskrive sin kopi. Det gør det ligegyldigt, om et event kommer to gange.
 - **Besked:** JSON (camelCase). `Type` = eventets klassenavn, og beskeden er `Persistent`.
-- **Mønster:** publish/subscribe. CatalogService kender ikke modtagerne. En service, der vil have events, laver sin egen kø og binder den til exchangen, som Web gør med `web.catalog-sync`.
+- **Mønster:** publish/subscribe. CatalogService kender ikke modtagerne. En service, der vil have events, laver sin egen kø og binder den til exchangen. (Web abonnerede tidligere med køen `web.catalog-sync` for at holde sin katalog-kopi opdateret; den er fjernet sammen med kopien.)
 - **Fejl:** Er RabbitMQ nede, logges fejlen, men ændringen er allerede gemt, og kaldet lykkes. Eventet går så tabt; et outbox-mønster ville løse det.
 
 ## Kør lokalt
@@ -107,7 +106,7 @@ Servicen kører på `http://localhost:5400` (https `5401`). Web finder den via `
 
 Med Docker: kopiér `.env.example` til `.env` i roden og udfyld passwords. `docker compose up` starter `eshopcatalogservice` på port 5400. SQL- og RabbitMQ-passwords kommer fra `.env` via miljøvariablerne i `docker-compose.override.yml`, ligesom for de andre services.
 
-Ved første opstart seedes de samme 12 varer, 5 mærker og 4 typer som i monolitten, så id'erne passer med det, kurv og ordrer allerede henviser til.
+Ved første opstart seedes de samme 12 varer, 5 mærker og 4 typer, som monolitten havde, så id'erne passer med det, kurv og ordrer allerede henviser til.
 
 ## Tests
 
@@ -119,10 +118,11 @@ dotnet test CatalogService/CatalogService.Tests
 - **Specifications:** filtrering og paging.
 - **Endpoints:** hele HTTP-flowet mod en in-memory database, inkl. `401`/`403` uden token eller uden admin-rolle, `409` ved dubletnavn og at det rigtige event sendes. RabbitMQ er udskiftet med `FakeCatalogEventPublisher`, så testene ikke kræver en broker.
 
-Uden for servicen tester `tests/IntegrationTests/Catalog/CatalogEventSyncTests.cs` synkroniseringen af monolittens `CatalogDb`, og Web's functional tests bruger `FakeCatalogApiClient` i stedet for den rigtige service.
+Uden for servicen bruger Web's functional tests `FakeCatalogApiClient` i stedet for den rigtige service, og checkout-testene (`tests/UnitTests/.../OrderCheckoutServiceTests`) mocker `ICatalogItemLookup`.
 
 ## Kendte begrænsninger
 
 - Events kan gå tabt, hvis RabbitMQ er nede i det øjeblik, en vare ændres (intet outbox).
-- Sletter man en vare, der ligger i en kurv, fejler kurvsiden og checkout i monolitten, fordi de forventer at finde varen i `CatalogDb`. Det løses, når kurven spørger CatalogService og håndterer en manglende vare.
+- Sletter man en vare, der ligger i en kurv, fejler kurvsiden og checkout i monolitten, fordi de forventer at finde varen i CatalogService (samme opførsel som før udtrækningen).
+- Kurvsiden og checkout virker kun, når CatalogService kører. Varer hentes én ad gangen (parallelt), da CatalogService ikke har et "hent mange på id"-endpoint.
 - JWT-nøglen er hardcodet og skal være den samme som monolittens (overtaget fra originalen).

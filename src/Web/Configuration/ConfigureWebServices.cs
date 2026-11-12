@@ -1,6 +1,5 @@
 ﻿using MediatR;
 using Microsoft.eShopWeb.Web.Interfaces;
-using Microsoft.eShopWeb.Web.Messaging;
 using Microsoft.eShopWeb.Web.Services;
 
 namespace Microsoft.eShopWeb.Web.Configuration;
@@ -16,11 +15,9 @@ public static class ConfigureWebServices
         // page Pages/Admin/EditCatalogItem, which is commented out because it writes to the monolith's CatalogDb
         // and would break once the monolith's catalog code is removed. See EditCatalogItem.cshtml.cs for details.
         //services.AddScoped<ICatalogItemViewModelService, CatalogItemViewModelService>();
-        services.Configure<CatalogSettings>(configuration);
 
-        // The HTTP client for CatalogService is registered always (not only when "UseCatalogService" is true),
-        // because the basket pages (Pages/Basket/Index and BasketViewModelService) now always read product
-        // data from CatalogService instead of the monolith's CatalogDb.
+        // The catalog lives in its own microservice (CatalogService/). The storefront, the basket pages
+        // and checkout all read product data from it over HTTP.
         services.AddHttpClient<ICatalogApiClient, CatalogApiClient>(client =>
         {
             var catalogServiceBaseUrl = configuration["CatalogServiceBaseUrl"] ?? "http://localhost:5400/";
@@ -29,26 +26,8 @@ public static class ConfigureWebServices
         // Checkout (ApplicationCore's OrderCheckoutService) reads product details from CatalogService through this.
         services.AddScoped<ApplicationCore.Interfaces.ICatalogItemLookup, CatalogApiItemLookup>();
 
-        // The catalog is being moved into its own microservice (CatalogService/). With "UseCatalogService": true
-        // the storefront reads products from it over HTTP; set it to false to fall back to the monolith's database.
-        if (configuration.GetValue<bool>("UseCatalogService"))
-        {
-            services.AddKeyedScoped<ICatalogViewModelService, CatalogApiViewModelService>(CachedCatalogViewModelService.UncachedServiceKey);
-        }
-        else
-        {
-            services.AddKeyedScoped<ICatalogViewModelService, CatalogViewModelService>(CachedCatalogViewModelService.UncachedServiceKey);
-        }
+        services.AddKeyedScoped<ICatalogViewModelService, CatalogApiViewModelService>(CachedCatalogViewModelService.UncachedServiceKey);
         services.AddScoped<ICatalogViewModelService, CachedCatalogViewModelService>();
-
-        // Keeps the monolith's own catalog copy (CatalogDb) in sync with CatalogService through RabbitMQ events,
-        // because the basket page and checkout still read product data from CatalogDb. See Messaging/CatalogEventSync.cs.
-        if (configuration.GetValue<bool>("SyncCatalogFromEvents"))
-        {
-            services.Configure<RabbitMqSettings>(configuration.GetSection(RabbitMqSettings.SectionName));
-            services.AddScoped<CatalogEventSync>();
-            services.AddHostedService<CatalogEventsListener>();
-        }
 
         return services;
     }
