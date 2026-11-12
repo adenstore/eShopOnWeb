@@ -18,15 +18,21 @@ public static class ConfigureWebServices
         //services.AddScoped<ICatalogItemViewModelService, CatalogItemViewModelService>();
         services.Configure<CatalogSettings>(configuration);
 
+        // The HTTP client for CatalogService is registered always (not only when "UseCatalogService" is true),
+        // because the basket pages (Pages/Basket/Index and BasketViewModelService) now always read product
+        // data from CatalogService instead of the monolith's CatalogDb.
+        services.AddHttpClient<ICatalogApiClient, CatalogApiClient>(client =>
+        {
+            var catalogServiceBaseUrl = configuration["CatalogServiceBaseUrl"] ?? "http://localhost:5400/";
+            client.BaseAddress = new Uri(catalogServiceBaseUrl);
+        });
+        // Checkout (ApplicationCore's OrderCheckoutService) reads product details from CatalogService through this.
+        services.AddScoped<ApplicationCore.Interfaces.ICatalogItemLookup, CatalogApiItemLookup>();
+
         // The catalog is being moved into its own microservice (CatalogService/). With "UseCatalogService": true
         // the storefront reads products from it over HTTP; set it to false to fall back to the monolith's database.
         if (configuration.GetValue<bool>("UseCatalogService"))
         {
-            services.AddHttpClient<ICatalogApiClient, CatalogApiClient>(client =>
-            {
-                var catalogServiceBaseUrl = configuration["CatalogServiceBaseUrl"] ?? "http://localhost:5400/";
-                client.BaseAddress = new Uri(catalogServiceBaseUrl);
-            });
             services.AddKeyedScoped<ICatalogViewModelService, CatalogApiViewModelService>(CachedCatalogViewModelService.UncachedServiceKey);
         }
         else

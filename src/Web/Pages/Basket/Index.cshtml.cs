@@ -12,15 +12,27 @@ public class IndexModel : PageModel
 {
     private readonly IBasketService _basketService;
     private readonly IBasketViewModelService _basketViewModelService;
-    private readonly IRepository<CatalogItem> _itemRepository;
+    // Commented out on purpose: the item (and its price) used to be read from the monolith's CatalogDb through
+    // IRepository<CatalogItem>. It is now read from CatalogService through ICatalogApiClient, so the monolith's
+    // catalog code can be removed. Old lines are kept here for reference.
+    //private readonly IRepository<CatalogItem> _itemRepository;
+    private readonly ICatalogApiClient _catalogApiClient;
 
+    //public IndexModel(IBasketService basketService,
+    //    IBasketViewModelService basketViewModelService,
+    //    IRepository<CatalogItem> itemRepository)
+    //{
+    //    _basketService = basketService;
+    //    _basketViewModelService = basketViewModelService;
+    //    _itemRepository = itemRepository;
+    //}
     public IndexModel(IBasketService basketService,
         IBasketViewModelService basketViewModelService,
-        IRepository<CatalogItem> itemRepository)
+        ICatalogApiClient catalogApiClient)
     {
         _basketService = basketService;
         _basketViewModelService = basketViewModelService;
-        _itemRepository = itemRepository;
+        _catalogApiClient = catalogApiClient;
     }
 
     public BasketViewModel BasketModel { get; set; } = new BasketViewModel();
@@ -37,7 +49,9 @@ public class IndexModel : PageModel
             return RedirectToPage("/Index");
         }
 
-        var item = await _itemRepository.GetByIdAsync(productDetails.Id);
+        // Commented out on purpose: reads the price from CatalogService instead of the monolith's CatalogDb (see above).
+        //var item = await _itemRepository.GetByIdAsync(productDetails.Id);
+        var item = await _catalogApiClient.GetCatalogItemAsync(productDetails.Id);
         if (item == null)
         {
             return RedirectToPage("/Index");

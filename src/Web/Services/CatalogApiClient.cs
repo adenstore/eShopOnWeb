@@ -45,7 +45,22 @@ public class CatalogApiClient : ICatalogApiClient
         return response?.CatalogTypes ?? new List<CatalogTypeDto>();
     }
 
+    public async Task<CatalogItemDto?> GetCatalogItemAsync(int catalogItemId, CancellationToken cancellationToken = default)
+    {
+        // CatalogService answers 404 for an unknown id; that is turned into null instead of an exception.
+        var response = await _httpClient.GetAsync($"api/catalog-items/{catalogItemId}", cancellationToken);
+        if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+        {
+            return null;
+        }
+        response.EnsureSuccessStatusCode();
+
+        var body = await response.Content.ReadFromJsonAsync<GetCatalogItemResponse>(cancellationToken);
+        return body?.CatalogItem;
+    }
+
     // Only the parts of CatalogService's responses that the Web app reads.
+    private record GetCatalogItemResponse(CatalogItemDto CatalogItem);
     private record ListPagedCatalogItemsResponse(List<CatalogItemDto> CatalogItems, int TotalItems);
     private record ListCatalogBrandsResponse(List<CatalogBrandDto> CatalogBrands);
     private record ListCatalogTypesResponse(List<CatalogTypeDto> CatalogTypes);
