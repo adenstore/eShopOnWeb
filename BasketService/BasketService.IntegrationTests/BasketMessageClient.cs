@@ -4,7 +4,7 @@ using Microsoft.eShopWeb.BasketService.Contracts;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 
-namespace Microsoft.eShopWeb.BasketServiceIntegrationTests;
+namespace Microsoft.eShopWeb.BasketService.IntegrationTests;
 
 /// <summary>
 /// Stands in for the API gateway: publishes commands, asks the queries, and watches the event

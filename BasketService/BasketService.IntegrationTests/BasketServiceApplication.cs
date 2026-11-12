@@ -8,7 +8,7 @@ using Microsoft.Extensions.Hosting;
 using Testcontainers.RabbitMq;
 using Xunit;
 
-namespace Microsoft.eShopWeb.BasketServiceIntegrationTests;
+namespace Microsoft.eShopWeb.BasketService.IntegrationTests;
 
 /// <summary>
 /// Starts a real RabbitMQ in a container and runs BasketService against it in memory.

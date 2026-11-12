@@ -7,7 +7,7 @@ using Xunit;
 
 using BasketSvc = Microsoft.eShopWeb.BasketService.Services.BasketService;
 
-namespace Microsoft.eShopWeb.BasketServiceTests.Services;
+namespace Microsoft.eShopWeb.BasketService.Tests.Services;
 
 public class TransferBasket
 {

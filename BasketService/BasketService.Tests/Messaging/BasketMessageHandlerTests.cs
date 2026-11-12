@@ -3,14 +3,14 @@ using Microsoft.eShopWeb.BasketService.Contracts;
 using Microsoft.eShopWeb.BasketService.Domain;
 using Microsoft.eShopWeb.BasketService.Interfaces;
 using Microsoft.eShopWeb.BasketService.Messaging;
-using Microsoft.eShopWeb.BasketServiceTests.Builders;
+using Microsoft.eShopWeb.BasketService.Tests.Builders;
 using Microsoft.eShopWeb.OrderService.Contracts;
 using Microsoft.eShopWeb.OrderService.Contracts.Events;
 using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 using Xunit;
 
-namespace Microsoft.eShopWeb.BasketServiceTests.Messaging;
+namespace Microsoft.eShopWeb.BasketService.Tests.Messaging;
 
 /// <summary>
 /// The handler is where every message rule lives, with no AMQP in it, so all of this runs without

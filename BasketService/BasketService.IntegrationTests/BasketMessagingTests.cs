@@ -1,7 +1,7 @@
 using Microsoft.eShopWeb.BasketService.Contracts;
 using Xunit;
 
-namespace Microsoft.eShopWeb.BasketServiceIntegrationTests;
+namespace Microsoft.eShopWeb.BasketService.IntegrationTests;
 
 /// <summary>
 /// BasketService against a real RabbitMQ in a container. These cover the ground the unit tests

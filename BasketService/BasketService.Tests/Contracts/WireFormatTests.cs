@@ -4,7 +4,7 @@ using Microsoft.eShopWeb.OrderService.Contracts;
 using Microsoft.eShopWeb.OrderService.Contracts.Events;
 using Xunit;
 
-namespace Microsoft.eShopWeb.BasketServiceTests.Contracts;
+namespace Microsoft.eShopWeb.BasketService.Tests.Contracts;
 
 /// <summary>
 /// Every publisher and consumer in the repo serializes with JsonSerializerDefaults.Web (camelCase,

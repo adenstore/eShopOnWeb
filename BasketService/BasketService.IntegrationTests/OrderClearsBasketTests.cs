@@ -2,7 +2,7 @@ using Microsoft.eShopWeb.BasketService.Contracts;
 using Microsoft.eShopWeb.OrderService.Contracts.Events;
 using Xunit;
 
-namespace Microsoft.eShopWeb.BasketServiceIntegrationTests;
+namespace Microsoft.eShopWeb.BasketService.IntegrationTests;
 
 /// <summary>
 /// Service-to-service: OrderService publishes to the "order-events" fanout and BasketService

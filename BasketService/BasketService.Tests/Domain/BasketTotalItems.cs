@@ -2,7 +2,7 @@ using FluentAssertions;
 using Microsoft.eShopWeb.BasketService.Domain;
 using Xunit;
 
-namespace Microsoft.eShopWeb.BasketServiceTests.Domain;
+namespace Microsoft.eShopWeb.BasketService.Tests.Domain;
 
 public class BasketTotalItems
 {

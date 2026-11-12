@@ -10,7 +10,7 @@ EXPOSE 8080
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /app
 COPY . .
-WORKDIR "/app/src/BasketService"
+WORKDIR "/app/BasketService/BasketService"
 RUN dotnet restore
 
 RUN dotnet build "./BasketService.csproj" -c Release -o /app/build

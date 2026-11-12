@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <Nullable>enable</Nullable>
-    <RootNamespace>Microsoft.eShopWeb.BasketServiceIntegrationTests</RootNamespace>
+    <RootNamespace>Microsoft.eShopWeb.BasketService.IntegrationTests</RootNamespace>
     <IsPackable>false</IsPackable>
     <LangVersion>latest</LangVersion>
     <ImplicitUsings>enable</ImplicitUsings>
@@ -21,7 +21,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\BasketService\BasketService.csproj" />
+    <ProjectReference Include="..\BasketService\BasketService.csproj" />
   </ItemGroup>
 
 </Project>

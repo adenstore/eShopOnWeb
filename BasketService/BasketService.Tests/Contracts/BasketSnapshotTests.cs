@@ -1,8 +1,8 @@
 using Microsoft.eShopWeb.BasketService.Contracts;
-using Microsoft.eShopWeb.BasketServiceTests.Builders;
+using Microsoft.eShopWeb.BasketService.Tests.Builders;
 using Xunit;
 
-namespace Microsoft.eShopWeb.BasketServiceTests.Contracts;
+namespace Microsoft.eShopWeb.BasketService.Tests.Contracts;
 
 public class BasketSnapshotTests
 {

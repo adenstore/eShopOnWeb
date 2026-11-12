@@ -4,7 +4,7 @@ using Microsoft.eShopWeb.BasketService.Specifications;
 using NSubstitute;
 using Xunit;
 
-namespace Microsoft.eShopWeb.BasketServiceTests.Specifications;
+namespace Microsoft.eShopWeb.BasketService.Tests.Specifications;
 
 public class BasketWithItems
 {

@@ -2,7 +2,7 @@ using Microsoft.eShopWeb.BasketService.Contracts;
 using Microsoft.eShopWeb.BasketService.Messaging;
 using Xunit;
 
-namespace Microsoft.eShopWeb.BasketServiceTests.Messaging;
+namespace Microsoft.eShopWeb.BasketService.Tests.Messaging;
 
 /// <summary>
 /// The domain services carry no guard clauses for these values — [ApiController] used to reject a

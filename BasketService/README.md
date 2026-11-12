@@ -117,8 +117,8 @@ consumes replies.
 
 ```sh
 docker compose up -d rabbitmq sqlserver
-dotnet ef database update --project src/BasketService --startup-project src/BasketService
-dotnet run --project src/BasketService
+dotnet ef database update --project BasketService/BasketService --startup-project BasketService/BasketService
+dotnet run --project BasketService/BasketService
 ```
 
 The `nix develop` shell exports `ConnectionStrings__BasketConnection` and the RabbitMQ credentials.
@@ -138,14 +138,14 @@ queue to `basket-events` to see the events, and check `invalid` when a message g
 
 Two projects, at two levels of the test pyramid.
 
-**`tests/BasketServiceTests` — 48 tests, no broker, milliseconds.** Every message rule lives in
+**`BasketService.Tests` — 48 tests, no broker, milliseconds.** Every message rule lives in
 `Messaging/BasketMessageHandler.cs`, which has no AMQP in it; the consumers above it are pure
 transport. That split is what keeps the rules reachable without infrastructure.
 `Contracts/WireFormatTests.cs` round-trips each message shape, including
 `OrderCreatedIntegrationEvent` from OrderService's own contracts assembly, because a shape that does
 not round-trip fails at runtime on a queue where there is no compiler to catch it.
 
-**`tests/BasketServiceIntegrationTests` — 15 tests, real RabbitMQ, ~15s. Needs Docker.** Testcontainers
+**`BasketService.IntegrationTests` — 15 tests, real RabbitMQ, ~15s. Needs Docker.** Testcontainers
 starts an actual broker on a random port and `WebApplicationFactory` runs the service against it,
 with only the database faked. These cover what a unit test cannot: that messages actually route,
 that rejected ones reach the dead-letter queue, that an unroutable key is caught by the alternate
@@ -156,8 +156,8 @@ that re-checks until the assertion holds. Asserting immediately after a publish 
 speed of the machine, not the behaviour of the service: green on a laptop, flaky in CI.
 
 ```sh
-dotnet test tests/BasketServiceTests              # always
-dotnet test tests/BasketServiceIntegrationTests   # needs a container runtime
+dotnet test BasketService/BasketService.Tests              # always
+dotnet test BasketService/BasketService.IntegrationTests   # needs a container runtime
 ```
 
 ## Still to do

@@ -1,6 +1,6 @@
 using Polly;
 
-namespace Microsoft.eShopWeb.BasketServiceIntegrationTests;
+namespace Microsoft.eShopWeb.BasketService.IntegrationTests;
 
 /// <summary>
 /// Polled waits for assertions that cannot be made immediately.

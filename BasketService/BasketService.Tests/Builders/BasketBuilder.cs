@@ -1,7 +1,7 @@
 using Microsoft.eShopWeb.BasketService.Domain;
 using NSubstitute;
 
-namespace Microsoft.eShopWeb.BasketServiceTests.Builders;
+namespace Microsoft.eShopWeb.BasketService.Tests.Builders;
 
 public class BasketBuilder
 {
