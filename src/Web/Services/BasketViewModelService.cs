@@ -10,7 +10,10 @@ namespace Microsoft.eShopWeb.Web.Services;
 public class BasketViewModelService : IBasketViewModelService
 {
     private readonly IBasketService _basketService;
-    private readonly IUriComposer _uriComposer;
+    // Commented out on purpose: IUriComposer was only used to turn the monolith's picture paths into URLs.
+    // CatalogService returns complete picture URLs, and IUriComposer is removed from the monolith together
+    // with the rest of its catalog code.
+    //private readonly IUriComposer _uriComposer;
     private readonly IBasketQueryService _basketQueryService;
     // Commented out on purpose: product name and picture for each basket line used to be read from the
     // monolith's CatalogDb through IRepository<CatalogItem>. They are now read from CatalogService through
@@ -28,13 +31,21 @@ public class BasketViewModelService : IBasketViewModelService
     //    _basketQueryService = basketQueryService;
     //    _itemRepository = itemRepository;
     //}
+    //public BasketViewModelService(IBasketService basketService,
+    //    ICatalogApiClient catalogApiClient,
+    //    IUriComposer uriComposer,
+    //    IBasketQueryService basketQueryService)
+    //{
+    //    _basketService = basketService;
+    //    _uriComposer = uriComposer;
+    //    _basketQueryService = basketQueryService;
+    //    _catalogApiClient = catalogApiClient;
+    //}
     public BasketViewModelService(IBasketService basketService,
         ICatalogApiClient catalogApiClient,
-        IUriComposer uriComposer,
         IBasketQueryService basketQueryService)
     {
         _basketService = basketService;
-        _uriComposer = uriComposer;
         _basketQueryService = basketQueryService;
         _catalogApiClient = catalogApiClient;
     }

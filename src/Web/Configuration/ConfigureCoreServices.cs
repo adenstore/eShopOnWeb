@@ -32,9 +32,6 @@ public static class ConfigureCoreServices
         services.AddScoped<IBasketService, ApplicationCore.Services.BasketService>();
         services.AddScoped<IBasketQueryService, Infrastructure.Data.Queries.BasketQueryService>();
 
-        var catalogSettings = configuration.Get<CatalogSettings>() ?? new CatalogSettings();
-        services.AddSingleton<IUriComposer>(new UriComposer(catalogSettings));
-
         services.AddScoped(typeof(IAppLogger<>), typeof(LoggerAdapter<>));
         services.AddTransient<IEmailSender, EmailSender>();
 
