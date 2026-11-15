@@ -10,6 +10,8 @@
     <PackageReference Include="Ocelot" />
     <!-- Basket is not proxied over HTTP: the gateway turns those REST calls into messages itself. -->
     <PackageReference Include="RabbitMQ.Client" />
+    <!-- Where the basket read projection lives, so basket reads cost no queue round-trip. -->
+    <PackageReference Include="StackExchange.Redis" />
   </ItemGroup>
 
   <ItemGroup>

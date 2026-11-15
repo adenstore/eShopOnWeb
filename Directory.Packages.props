@@ -64,6 +64,9 @@
     <!-- Niveau 3, asynchronous tests: a real RabbitMQ in a container (opgave 3A), and polled waits
          for the eventual consistency that comes with it (opgave 3B). -->
     <PackageVersion Include="Testcontainers.RabbitMq" Version="3.10.0" />
+    <!-- The gateway's basket projection lives in Redis, and its apply rules are Lua running inside
+         it, so there is nothing to test without a real one. -->
+    <PackageVersion Include="Testcontainers.Redis" Version="3.10.0" />
     <PackageVersion Include="Polly" Version="8.4.2" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.9.0" />
     <PackageVersion Include="xunit" Version="2.7.0" />

@@ -61,8 +61,10 @@ services:
       - "eshopcatalogservice"
       - "eshoporderservice"
       - "eshoplagerservice"
-      # The basket routes are not proxied: the gateway publishes them to RabbitMQ itself.
+      # The basket routes are not proxied: the gateway publishes them to RabbitMQ itself,
+      # and keeps its basket read projection in Redis.
       - "rabbitmq"
+      - "redis"
   sqlserver:
     image: mcr.microsoft.com/azure-sql-edge
     ports:
@@ -81,7 +83,9 @@ services:
       - RABBITMQ_DEFAULT_USER=${RABBITMQ_USER:?Copy .env.example to .env}
       - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASS:?Copy .env.example to .env}
   redis:
-    # LagerService stores its stock here (key-value database instead of SQL Server).
+    # LagerService stores its stock here (key-value database instead of SQL Server), and the
+    # gateway its basket read projection. Separate key prefixes ("lager:", "basket:"), since
+    # neither owns the other's data.
     image: redis:7
     command: redis-server --appendonly yes
     ports:

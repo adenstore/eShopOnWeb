@@ -1,7 +1,9 @@
 using Microsoft.eShopWeb.ApiGateway.Endpoints;
 using Microsoft.eShopWeb.ApiGateway.Messaging;
+using Microsoft.eShopWeb.ApiGateway.Projections;
 using Ocelot.DependencyInjection;
 using Ocelot.Middleware;
+using StackExchange.Redis;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -22,6 +24,36 @@ builder.Services.AddOcelot(builder.Configuration);
 builder.Services.Configure<RabbitMqSettings>(builder.Configuration.GetSection(RabbitMqSettings.SectionName));
 builder.Services.AddSingleton<IRabbitMqConnection, RabbitMqConnection>();
 builder.Services.AddSingleton<IBasketCommandPublisher, RabbitMqBasketCommandPublisher>();
+builder.Services.AddSingleton<IBasketQueryClient, RabbitMqBasketQueryClient>();
+
+// The read side: a projection of the "basket-events" fanout, so rendering a basket — or the header
+// item count, which renders on every page in the shop — is a local lookup instead of a queue
+// round-trip. BasketService is still asked whenever the projection cannot answer confidently.
+if (builder.Configuration.GetValue<bool>("Projection:UseOnlyInMemoryStore"))
+{
+    builder.Services.AddSingleton<IBasketProjection, InMemoryBasketProjection>();
+}
+else
+{
+    builder.Services.AddSingleton<IConnectionMultiplexer>(_ =>
+    {
+        var options = ConfigurationOptions.Parse(
+            builder.Configuration.GetConnectionString("Redis") ?? "localhost:6379");
+        // Keep retrying if Redis starts after the gateway, rather than throwing on first use —
+        // the same reason the AMQP connection is opened lazily. A projection the gateway cannot
+        // reach degrades reads to queries; it does not take the gateway down.
+        options.AbortOnConnectFail = false;
+        return ConnectionMultiplexer.Connect(options);
+    });
+    builder.Services.AddSingleton<IBasketProjection, RedisBasketProjection>();
+}
+
+// Off in tests, as in LagerService: nothing to consume from, and a background service retrying a
+// broker that is not there just adds noise to the log.
+if (builder.Configuration.GetValue("RabbitMQ:Enabled", true))
+{
+    builder.Services.AddHostedService<BasketEventsConsumer>();
+}
 
 var app = builder.Build();
 
