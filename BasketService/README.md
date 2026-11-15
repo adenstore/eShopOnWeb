@@ -117,8 +117,26 @@ consumes replies.
 
 ```sh
 docker compose up -d rabbitmq sqlserver
-dotnet ef database update --project BasketService/BasketService --startup-project BasketService/BasketService
 dotnet run --project BasketService/BasketService
+```
+
+The service creates `Microsoft.eShopOnWeb.BasketDb` and applies its migrations itself on startup, so
+there is no `dotnet ef database update` step — and nothing is left depending on someone having
+remembered to run one. It happens before `app.Run()`, which is what starts the consumers, so this
+service never consumes a command it cannot commit; a command is one-way, so one that failed on a
+missing table would be dead-lettered to `invalid` with nobody left to tell.
+
+It retries for up to two minutes while waiting for SQL Server. That is not belt-and-braces:
+`compose up` returns as soon as the *container* has started, and the `azure-sql-edge` image takes
+around 40 seconds after that to accept connections, during which the TCP pre-login handshake fails
+in a way `EnableRetryOnFailure()` does not treat as transient. Without the retry the service died on
+startup. See `Data/DatabaseMigrator.cs`.
+
+To add a migration (the `--startup-project` is required — the repo-root `docker-compose.dcproj`
+otherwise makes `dotnet-ef` crash on an empty `frameworkName`):
+
+```sh
+dotnet ef migrations add <Name> --project BasketService/BasketService --startup-project BasketService/BasketService
 ```
 
 The `nix develop` shell exports `ConnectionStrings__BasketConnection` and the RabbitMQ credentials.
@@ -168,8 +186,11 @@ dotnet test BasketService/BasketService.IntegrationTests   # needs a container r
   so these become hand-written endpoints that publish.
 - **The read projection**, planned for Redis so it survives a gateway restart and works with more
   than one gateway instance.
-- **Its own database.** `BasketConnection` points at a separate `BasketDb` but the monolith still
-  owns the live basket tables in the catalog DB, and still serves all basket traffic.
+- **Its own database.** `BasketDb` now exists and this service migrates it, but the monolith still
+  owns the live basket tables in the catalog DB and still serves all basket traffic. Nothing is
+  migrated across at the cut-over and nothing needs to be: baskets are cookie-scoped and deleted at
+  checkout, and `BasketItems` only references `Baskets`, so the worst case is an abandoned cart
+  going empty.
 - `IBasketQueryService` / `Data/Queries/BasketQueryService.cs` are now unreachable: the item count
   rides along on `BasketSnapshot.TotalItems` so that readers need no second round-trip. Left in
   place rather than deleted as part of a transport change.

@@ -37,6 +37,11 @@ builder.Services.AddHealthChecks();
 
 var app = builder.Build();
 
+// Nothing else creates Microsoft.eShopOnWeb.BasketDb, even though docker-compose.override.yml has
+// pointed at it since this service was extracted. Runs before app.Run(), so it is done before the
+// consumers start — see DatabaseMigrator for why that ordering matters and why it retries.
+await DatabaseMigrator.MigrateAsync(app.Services, app.Logger);
+
 if (app.Environment.IsDevelopment())
 {
     app.UseDeveloperExceptionPage();
