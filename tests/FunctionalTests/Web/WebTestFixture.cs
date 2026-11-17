@@ -58,17 +58,16 @@ public class TestApplication : WebApplicationFactory<IBasketViewModelService>
             services.RemoveAll<IOrderApiClient>();
             services.AddSingleton<IOrderApiClient, FakeOrderApiClient>();
 
-            // Production now registers BasketApiClient, which calls the ApiGateway. These tests
-            // substitute the in-process basket against the in-memory database above, so they need
-            // no live gateway, service or broker and still exercise real basket rules. It behaves
-            // like the gateway where it matters to these tests: a read does not create a basket,
-            // so a buyer who has added nothing is reported at NoBasketId, the same as production.
-            // When that implementation is deleted this becomes a fake implementing both
-            // interfaces, the way FakeOrderApiClient and FakeCatalogApiClient already do.
+            // Production registers BasketApiClient, which calls the ApiGateway. Replace it with an
+            // in-memory fake so these tests need no live gateway, service or broker — the way
+            // FakeOrderApiClient and FakeCatalogApiClient already do. One instance implements both
+            // interfaces, because a page reads the basket through one and counts it through the
+            // other and the two have to agree.
+            var fakeBasket = new FakeBasketApiClient();
             services.RemoveAll<IBasketService>();
             services.RemoveAll<IBasketQueryService>();
-            services.AddScoped<IBasketService, ApplicationCore.Services.BasketService>();
-            services.AddScoped<IBasketQueryService, Infrastructure.Data.Queries.BasketQueryService>();
+            services.AddSingleton<IBasketService>(fakeBasket);
+            services.AddSingleton<IBasketQueryService>(fakeBasket);
             // Replace the HTTP client for the Catalog microservice with an in-memory fake
             services.RemoveAll<ICatalogApiClient>();
             services.AddSingleton<ICatalogApiClient, FakeCatalogApiClient>();
