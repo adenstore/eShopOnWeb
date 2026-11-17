@@ -5,7 +5,6 @@ using Microsoft.eShopWeb.ApplicationCore.Entities;
 using Microsoft.eShopWeb.ApplicationCore.Exceptions;
 using Microsoft.eShopWeb.ApplicationCore.Interfaces;
 using Microsoft.eShopWeb.ApplicationCore.Services;
-using Microsoft.eShopWeb.ApplicationCore.Specifications;
 using Microsoft.eShopWeb.BasketService.Contracts;
 using Microsoft.eShopWeb.OrderService.Contracts;
 using NSubstitute;

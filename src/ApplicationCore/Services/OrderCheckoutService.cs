@@ -3,7 +3,6 @@ using System.Threading.Tasks;
 using Ardalis.GuardClauses;
 using Microsoft.eShopWeb.ApplicationCore.Entities;
 using Microsoft.eShopWeb.ApplicationCore.Interfaces;
-using Microsoft.eShopWeb.ApplicationCore.Specifications;
 using Microsoft.eShopWeb.OrderService.Contracts;
 
 namespace Microsoft.eShopWeb.ApplicationCore.Services;

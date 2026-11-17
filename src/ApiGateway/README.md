@@ -238,12 +238,11 @@ dotnet test tests/ApiGatewayIntegrationTests   # needs Docker or Podman
 
 ## Still to do
 
-- **End-to-end verification of the cut-over.** The Web app calls these routes now:
-  `BasketServiceBaseUrl` points at the gateway and `BasketApiClient` is registered for both basket
-  interfaces (`ConfigureCoreServices.cs`). The build and the full suite are green, but nothing has
-  yet driven a real browser through a real gateway, broker and service — which is where the
-  interesting failures live, because they are all timing. Until that is done the monolith's
-  in-process basket is left compiling but unregistered, so reverting is a one-line change.
+- ~~**End-to-end verification of the cut-over.**~~ Done by hand on 2026-11-17, against a rebuilt
+  compose stack: items added at several quantities and an order placed. `BasketServiceBaseUrl`
+  points at the gateway and `BasketApiClient` is registered for both basket interfaces
+  (`ConfigureCoreServices.cs`), and the monolith's in-process basket has since been deleted, so
+  these routes are the only way to a basket — there is no longer a one-line revert.
   <br>
   Both traps the plan called out are closed rather than avoided: the application uses
   `BasketSnapshot` itself instead of a DTO that renames `basketId` to `id` (which would have read

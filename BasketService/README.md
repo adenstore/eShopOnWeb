@@ -180,22 +180,15 @@ dotnet test BasketService/BasketService.IntegrationTests   # needs a container r
 
 ## Still to do
 
-- **Deleting the basket from the monolith.** The Web app calls this service through the gateway now
-  (`BasketApiClient`, registered in `ConfigureCoreServices.cs`), so this service owns the live
-  basket and `BasketDb` is the only basket database in use. What is left in `src/` is dead but
-  still compiling, on purpose: `ApplicationCore/Services/BasketService.cs`,
-  `Infrastructure/Data/Queries/BasketQueryService.cs`, `Dtos/BasketDto.cs`, the
-  `BasketAggregate` entities, `BasketWithItemsSpecification`, the two EF configurations and the two
-  `CatalogContext` DbSets. Keeping them means reverting the cut-over is one DI line while it is
-  verified end to end; they go afterwards, with a `DropBasketTables` migration
-  (`20261004113825_MoveOrdersToOrderService.cs` is the precedent). Nothing is migrated across and
-  nothing needs to be: baskets are cookie-scoped and deleted at checkout, and `BasketItems` only
-  references `Baskets`, so the worst case is an abandoned cart going empty.
-- **No end-to-end run of the real stack.** The suite is green and
+- **No automated end-to-end test of the real stack.** The cut-over was verified by hand on
+  2026-11-17 — several items at different quantities added and checked out against a rebuilt
+  compose stack — and the monolith's basket was deleted on the strength of that run. What is still
+  missing is a *test*: the suite is green and
   `tests/UnitTests/Infrastructure/Services/BasketApiClientTests.cs` pins the REST contract the Web
-  app sends, but the functional tests still substitute the basket in process, so no test drives
-  REST in at the frontend and asserts a basket comes back out of a real broker and a real service.
-  That is the gap to close before the deletions above.
+  app sends, but the functional tests substitute `FakeBasketApiClient`, so nothing drives REST in
+  at the frontend and asserts a basket comes back out of a real broker and a real service. The
+  fake deliberately applies writes synchronously, so it cannot catch a lost read-your-own-writes
+  guarantee — that is where the gap bites.
 - This service's own `Interfaces/IBasketQueryService.cs` / `Data/Queries/BasketQueryService.cs` are
   unreachable: the item count rides along on `BasketSnapshot.TotalItems` so that readers need no
   second round-trip. Left in place rather than deleted as part of a transport change.

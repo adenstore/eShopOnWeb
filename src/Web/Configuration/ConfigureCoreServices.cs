@@ -11,6 +11,9 @@ public static class ConfigureCoreServices
     public static IServiceCollection AddCoreServices(this IServiceCollection services,
         IConfiguration configuration)
     {
+        // Nothing resolves these any more — the basket was the monolith's last entity, and
+        // CatalogContext is now empty. Left registered with the context itself; see the remark on
+        // CatalogContext for what has to be true before the whole EF layer can go.
         services.AddScoped(typeof(IReadRepository<>), typeof(EfRepository<>));
         services.AddScoped(typeof(IRepository<>), typeof(EfRepository<>));
 
@@ -37,11 +40,6 @@ public static class ConfigureCoreServices
             client.BaseAddress = new Uri(basketServiceBaseUrl);
         });
         services.AddScoped<IBasketQueryService>(sp => (BasketApiClient)sp.GetRequiredService<IBasketService>());
-
-        // ApplicationCore.Services.BasketService and Infrastructure.Data.Queries.BasketQueryService
-        // are still a complete in-process basket against CatalogDb, left compiling but unregistered
-        // so the two lines above are the whole cut-over and reversing it is a one-line change. They
-        // go, with the entities and the tables, once this path is verified end to end.
 
         services.AddScoped(typeof(IAppLogger<>), typeof(LoggerAdapter<>));
         services.AddTransient<IEmailSender, EmailSender>();
