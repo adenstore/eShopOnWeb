@@ -21,9 +21,9 @@ public sealed class RabbitMqContainerFixture : IAsyncLifetime
     public const string Password = "eshop";
 
     // 1. Definér containeren (slide "Opgavekort 3A", trin 1).
-    //    "3-management" er RabbitMQ med web-UI'et, samme image som i docker-compose.
+    //    "4-management" er RabbitMQ med web-UI'et, samme image som i docker-compose.
     private readonly RabbitMqContainer _container = new RabbitMqBuilder()
-        .WithImage("rabbitmq:3-management")
+        .WithImage("rabbitmq:4-management")
         .WithUsername(UserName)
         .WithPassword(Password)
         .Build();
