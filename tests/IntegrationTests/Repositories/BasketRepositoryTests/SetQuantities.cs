@@ -10,6 +10,11 @@ using Xunit;
 
 namespace Microsoft.eShopWeb.IntegrationTests.Repositories.BasketRepositoryTests;
 
+// ApplicationCore references BasketService.Contracts now, so the simple name "BasketService"
+// resolves to the Microsoft.eShopWeb.BasketService namespace — an enclosing namespace member beats
+// any using directive. Alias the class under test back onto its own name.
+using BasketService = global::Microsoft.eShopWeb.ApplicationCore.Services.BasketService;
+
 public class SetQuantities
 {
     private readonly CatalogContext _catalogContext;

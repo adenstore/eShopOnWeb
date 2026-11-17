@@ -238,12 +238,18 @@ dotnet test tests/ApiGatewayIntegrationTests   # needs Docker or Podman
 
 ## Still to do
 
-- **Nothing calls these routes yet.** The Web app still serves basket in-process; pointing
-  `BasketServiceBaseUrl` at the gateway is the next step in the extraction. Two things will bite
-  there: `BasketDto.Id` is `BasketSnapshot.BasketId` on the wire, so a client left deserializing the
-  old DTO silently reads `Id = 0` — indistinguishable from a buyer with no basket — and
-  `GetOrCreateBasketAsync` no longer creates, so a new buyer gets id `0` and the callers that key
-  off it need a guard.
+- **End-to-end verification of the cut-over.** The Web app calls these routes now:
+  `BasketServiceBaseUrl` points at the gateway and `BasketApiClient` is registered for both basket
+  interfaces (`ConfigureCoreServices.cs`). The build and the full suite are green, but nothing has
+  yet driven a real browser through a real gateway, broker and service — which is where the
+  interesting failures live, because they are all timing. Until that is done the monolith's
+  in-process basket is left compiling but unregistered, so reverting is a one-line change.
+  <br>
+  Both traps the plan called out are closed rather than avoided: the application uses
+  `BasketSnapshot` itself instead of a DTO that renames `basketId` to `id` (which would have read
+  `0` silently, indistinguishable from a buyer with no basket), and `IBasketService.NoBasketId`
+  plus `BasketViewModel.HasBasket` give the two call sites that key off the id — basket update and
+  checkout — somewhere to branch before they address basket `0`.
 - **No end-to-end test through the gateway to BasketService.** The read path is covered on both
   sides of the boundary — the gateway's decisions here, the message contracts in
   `BasketService.IntegrationTests` — but nothing yet drives REST in at one end and asserts a basket

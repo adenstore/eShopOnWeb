@@ -8,6 +8,9 @@ using Xunit;
 
 namespace Microsoft.eShopWeb.UnitTests.ApplicationCore.Services.BasketServiceTests;
 
+// See AddItemToBasket.cs: "BasketService" is a namespace from here unless it is aliased.
+using BasketService = global::Microsoft.eShopWeb.ApplicationCore.Services.BasketService;
+
 public class DeleteBasket
 {
     private readonly string _buyerId = "Test buyerId";

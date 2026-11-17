@@ -39,7 +39,7 @@ public class IndexModel : PageModel
 
     public async Task OnGet()
     {
-        BasketModel = await _basketViewModelService.GetOrCreateBasketForUser(GetOrSetBasketCookieAndUserName());
+        BasketModel = await _basketViewModelService.GetBasketForUser(GetOrSetBasketCookieAndUserName());
     }
 
     public async Task<IActionResult> OnPost(CatalogItemViewModel productDetails)
@@ -58,25 +58,35 @@ public class IndexModel : PageModel
         }
 
         var username = GetOrSetBasketCookieAndUserName();
-        var basket = await _basketService.AddItemToBasket(username,
-            productDetails.Id, item.Price);
+        await _basketService.AddItemToBasket(username, productDetails.Id, item.Price);
 
-        BasketModel = await _basketViewModelService.Map(basket);
-
+        // Nothing is rendered here: this is Post-Redirect-Get, and the redirect re-reads the
+        // basket. The gateway serves that read from BasketService rather than from its projection
+        // while this command is still in flight, so the item shows up on the first render.
         return RedirectToPage();
     }
 
-    public async Task OnPostUpdate(IEnumerable<BasketItemViewModel> items)
+    public async Task<IActionResult> OnPostUpdate(IEnumerable<BasketItemViewModel> items)
     {
         if (!ModelState.IsValid)
         {
-            return;
+            return Page();
         }
 
-        var basketView = await _basketViewModelService.GetOrCreateBasketForUser(GetOrSetBasketCookieAndUserName());
+        var basketView = await _basketViewModelService.GetBasketForUser(GetOrSetBasketCookieAndUserName());
+        if (!basketView.HasBasket)
+        {
+            // Nothing to update. Sending the command anyway would address basket 0, which the
+            // gateway rejects with a 400, and EnsureSuccessStatusCode would turn that into a 500.
+            return RedirectToPage();
+        }
+
         var updateModel = items.ToDictionary(b => b.Id.ToString(), b => b.Quantity);
-        var basket = await _basketService.SetQuantities(basketView.Id, updateModel);
-        BasketModel = await _basketViewModelService.Map(basket);
+        await _basketService.SetQuantities(basketView.Id, updateModel);
+
+        // Redirect rather than render: SetQuantities is a one-way command with no updated basket
+        // to show. It also stops a refresh of the basket page from re-submitting the form.
+        return RedirectToPage();
     }
 
     private string GetOrSetBasketCookieAndUserName()

@@ -9,6 +9,9 @@ using Xunit;
 
 namespace Microsoft.eShopWeb.UnitTests.ApplicationCore.Services.BasketServiceTests;
 
+// See AddItemToBasket.cs: "BasketService" is a namespace from here unless it is aliased.
+using BasketService = global::Microsoft.eShopWeb.ApplicationCore.Services.BasketService;
+
 public class TransferBasket
 {
     private readonly string _nonexistentAnonymousBasketBuyerId = "nonexistent-anonymous-basket-buyer-id";

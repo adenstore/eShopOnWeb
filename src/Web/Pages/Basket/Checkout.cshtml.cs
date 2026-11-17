@@ -52,10 +52,30 @@ public class CheckoutModel : PageModel
                 return BadRequest();
             }
 
+            if (!BasketModel.HasBasket)
+            {
+                // No basket to check out. Same destination as an empty one below, reached before
+                // any command is sent: basket 0 is not an id the gateway accepts.
+                _logger.LogWarning("Checkout was posted for a buyer with no basket.");
+                return RedirectToPage("/Basket/Index");
+            }
+
             var updateModel = items.ToDictionary(b => b.Id.ToString(), b => b.Quantity);
             await _basketService.SetQuantities(BasketModel.Id, updateModel);
+
+            // These two must not be reordered or decoupled, and nothing in the types says so.
+            // SetQuantities is a one-way command and CreateOrderAsync reads the basket back to
+            // build the order, so an order from pre-update quantities would be a money bug. Three
+            // things stop it: the await above returns only once the gateway has the command on the
+            // queue; "basket-service" is FIFO with a single consumer at prefetch 1, so the read is
+            // handled after the write commits; and the by-id read never consults the gateway's
+            // projection. Buffering publishes in the gateway, or adding a second consumer to that
+            // queue, would silently break this.
             await _orderService.CreateOrderAsync(BasketModel.Id, new AddressDto("123 Main St.", "Kent", "OH", "United States", "44240"));
-            await _basketService.DeleteBasketAsync(BasketModel.Id);
+
+            // No DeleteBasketAsync. BasketService empties the basket when it sees OrderService's
+            // OrderCreated event, so the clear happens with the order rather than depending on
+            // this request surviving long enough to make a third call.
         }
         catch (EmptyBasketOnCheckoutException emptyBasketOnCheckoutException)
         {
@@ -72,12 +92,12 @@ public class CheckoutModel : PageModel
         Guard.Against.Null(User?.Identity?.Name, nameof(User.Identity.Name));
         if (_signInManager.IsSignedIn(HttpContext.User))
         {
-            BasketModel = await _basketViewModelService.GetOrCreateBasketForUser(User.Identity.Name);
+            BasketModel = await _basketViewModelService.GetBasketForUser(User.Identity.Name);
         }
         else
         {
             GetOrSetBasketCookieAndUserName();
-            BasketModel = await _basketViewModelService.GetOrCreateBasketForUser(_username!);
+            BasketModel = await _basketViewModelService.GetBasketForUser(_username!);
         }
     }
 
