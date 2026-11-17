@@ -62,5 +62,8 @@ services:
    environment:
      - ASPNETCORE_ENVIRONMENT=Docker
      - ASPNETCORE_URLS=http://+:8080
+     # The gateway publishes the basket commands itself, so it needs broker credentials like a service does.
+     - RabbitMQ__UserName=${RABBITMQ_USER}
+     - RabbitMQ__Password=${RABBITMQ_PASS}
    ports:
      - "5278:8080"
