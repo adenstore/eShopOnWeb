@@ -1,13 +1,12 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.eShopWeb.ApplicationCore.Dtos;
 using Microsoft.eShopWeb.ApplicationCore.Entities;
-using Microsoft.eShopWeb.ApplicationCore.Entities.BasketAggregate;
 using Microsoft.eShopWeb.ApplicationCore.Exceptions;
 using Microsoft.eShopWeb.ApplicationCore.Interfaces;
 using Microsoft.eShopWeb.ApplicationCore.Services;
 using Microsoft.eShopWeb.ApplicationCore.Specifications;
+using Microsoft.eShopWeb.BasketService.Contracts;
 using Microsoft.eShopWeb.OrderService.Contracts;
 using NSubstitute;
 using Xunit;
@@ -34,9 +33,10 @@ public class CreateOrderAsync
     [Fact]
     public async Task SendsBasketSnapshotToOrderService()
     {
-        var basket = new Basket("buyer-1");
-        basket.AddItem(7, 12.5m, 3);
-        _mockBasketService.GetBasketAsync(Arg.Any<int>()).Returns(BasketDto.FromBasket(basket));
+        // The published contract, built directly: the basket arrives over the wire as a snapshot,
+        // so there is no entity to map and the fixture does not depend on the monolith's Basket.
+        var basket = new BasketSnapshot(1, "buyer-1", new[] { new BasketItemSnapshot(17, 7, 12.5m, 3) });
+        _mockBasketService.GetBasketAsync(Arg.Any<int>()).Returns(basket);
         // Commented out on purpose: the catalog item now comes from ICatalogItemLookup, with a complete picture URL.
         //_mockItemRepo.ListAsync(Arg.Any<CatalogItemsSpecification>(), default)
         //    .Returns(new List<CatalogItem> { new TestCatalogItem(7, "Mug", "http://catalogbaseurltobereplaced/images/products/7.png") });
@@ -63,7 +63,7 @@ public class CreateOrderAsync
     [Fact]
     public async Task ThrowsAndSendsNothingForEmptyBasket()
     {
-        _mockBasketService.GetBasketAsync(Arg.Any<int>()).Returns(BasketDto.FromBasket(new Basket("buyer-1")));
+        _mockBasketService.GetBasketAsync(Arg.Any<int>()).Returns(BasketSnapshot.Empty(1, "buyer-1"));
 
         await Assert.ThrowsAsync<EmptyBasketOnCheckoutException>(() => CreateService().CreateOrderAsync(1, _address));
 

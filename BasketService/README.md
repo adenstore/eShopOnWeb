@@ -180,23 +180,25 @@ dotnet test BasketService/BasketService.IntegrationTests   # needs a container r
 
 ## Still to do
 
-- **The gateway's read routes.** The writes are done: `src/ApiGateway` publishes `Basket.addItem`,
-  `Basket.setQuantities` and `Basket.transfer` from hand-written REST endpoints (see
-  `src/ApiGateway/README.md`). The two queries still have no caller, because they need the
-  projection below.
-- **Nothing calls the gateway yet.** The Web app still serves basket in-process (see
-  `ConfigureCoreServices.cs`); `BasketApiClient` is kept, unregistered, to become the
-  frontend→gateway client.
-- **The read projection**, planned for Redis so it survives a gateway restart and works with more
-  than one gateway instance.
-- **Its own database.** `BasketDb` now exists and this service migrates it, but the monolith still
-  owns the live basket tables in the catalog DB and still serves all basket traffic. Nothing is
-  migrated across at the cut-over and nothing needs to be: baskets are cookie-scoped and deleted at
-  checkout, and `BasketItems` only references `Baskets`, so the worst case is an abandoned cart
-  going empty.
-- `IBasketQueryService` / `Data/Queries/BasketQueryService.cs` are now unreachable: the item count
-  rides along on `BasketSnapshot.TotalItems` so that readers need no second round-trip. Left in
-  place rather than deleted as part of a transport change.
+- **Deleting the basket from the monolith.** The Web app calls this service through the gateway now
+  (`BasketApiClient`, registered in `ConfigureCoreServices.cs`), so this service owns the live
+  basket and `BasketDb` is the only basket database in use. What is left in `src/` is dead but
+  still compiling, on purpose: `ApplicationCore/Services/BasketService.cs`,
+  `Infrastructure/Data/Queries/BasketQueryService.cs`, `Dtos/BasketDto.cs`, the
+  `BasketAggregate` entities, `BasketWithItemsSpecification`, the two EF configurations and the two
+  `CatalogContext` DbSets. Keeping them means reverting the cut-over is one DI line while it is
+  verified end to end; they go afterwards, with a `DropBasketTables` migration
+  (`20261004113825_MoveOrdersToOrderService.cs` is the precedent). Nothing is migrated across and
+  nothing needs to be: baskets are cookie-scoped and deleted at checkout, and `BasketItems` only
+  references `Baskets`, so the worst case is an abandoned cart going empty.
+- **No end-to-end run of the real stack.** The suite is green and
+  `tests/UnitTests/Infrastructure/Services/BasketApiClientTests.cs` pins the REST contract the Web
+  app sends, but the functional tests still substitute the basket in process, so no test drives
+  REST in at the frontend and asserts a basket comes back out of a real broker and a real service.
+  That is the gap to close before the deletions above.
+- This service's own `Interfaces/IBasketQueryService.cs` / `Data/Queries/BasketQueryService.cs` are
+  unreachable: the item count rides along on `BasketSnapshot.TotalItems` so that readers need no
+  second round-trip. Left in place rather than deleted as part of a transport change.
 - Denormalising product name and picture onto `BasketSnapshot` would let the Web layer stop reading
   catalog tables to render a basket, but it needs a catalog projection in this service fed by
   `catalog-events`, plus a decision about what happens to an item already in someone's basket when

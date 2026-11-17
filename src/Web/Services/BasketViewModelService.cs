@@ -1,7 +1,7 @@
-﻿using Microsoft.eShopWeb.ApplicationCore.Dtos;
-using Microsoft.eShopWeb.ApplicationCore.Entities;
+﻿using Microsoft.eShopWeb.ApplicationCore.Entities;
 using Microsoft.eShopWeb.ApplicationCore.Interfaces;
 using Microsoft.eShopWeb.ApplicationCore.Specifications;
+using Microsoft.eShopWeb.BasketService.Contracts;
 using Microsoft.eShopWeb.Web.Interfaces;
 using Microsoft.eShopWeb.Web.Pages.Basket;
 
@@ -50,14 +50,14 @@ public class BasketViewModelService : IBasketViewModelService
         _catalogApiClient = catalogApiClient;
     }
 
-    public async Task<BasketViewModel> GetOrCreateBasketForUser(string userName)
+    public async Task<BasketViewModel> GetBasketForUser(string userName)
     {
-        var basket = await _basketService.GetOrCreateBasketAsync(userName);
+        var basket = await _basketService.GetBasketAsync(userName);
 
         return await Map(basket);
     }
 
-    private async Task<List<BasketItemViewModel>> GetBasketItems(IReadOnlyCollection<BasketItemDto> basketItems)
+    private async Task<List<BasketItemViewModel>> GetBasketItems(IReadOnlyCollection<BasketItemSnapshot> basketItems)
     {
         // Commented out on purpose: the catalog items are fetched from CatalogService instead of the monolith's
         // CatalogDb (see the constructor). CatalogService has no "get many by id" endpoint, so each distinct
@@ -90,12 +90,17 @@ public class BasketViewModelService : IBasketViewModelService
         return items;
     }
 
-    public async Task<BasketViewModel> Map(BasketDto basket)
+    // Private now: the pages used to map the basket a write handed back, and the writes are
+    // one-way commands that hand back nothing.
+    private async Task<BasketViewModel> Map(BasketSnapshot basket)
     {
         return new BasketViewModel()
         {
             BuyerId = basket.BuyerId,
-            Id = basket.Id,
+            // BasketId, not Id. The contract names it for what it is, and the two are easy to
+            // confuse: deserializing this payload into a DTO with an "Id" silently yields 0, which
+            // is exactly the value that means "this buyer has no basket".
+            Id = basket.BasketId,
             Items = await GetBasketItems(basket.Items)
         };
     }

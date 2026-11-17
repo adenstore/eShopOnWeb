@@ -58,11 +58,13 @@ public class TestApplication : WebApplicationFactory<IBasketViewModelService>
             services.RemoveAll<IOrderApiClient>();
             services.AddSingleton<IOrderApiClient, FakeOrderApiClient>();
 
-            // Basket currently runs in-process in production too, so this swap is a no-op for
-            // now. It is kept deliberately: once the Web app talks to the gateway over RabbitMQ,
-            // production will register a publishing client again and these tests need the
-            // in-process implementation against the in-memory database above, so that they
-            // require no live service or broker and still exercise real basket rules.
+            // Production now registers BasketApiClient, which calls the ApiGateway. These tests
+            // substitute the in-process basket against the in-memory database above, so they need
+            // no live gateway, service or broker and still exercise real basket rules. It behaves
+            // like the gateway where it matters to these tests: a read does not create a basket,
+            // so a buyer who has added nothing is reported at NoBasketId, the same as production.
+            // When that implementation is deleted this becomes a fake implementing both
+            // interfaces, the way FakeOrderApiClient and FakeCatalogApiClient already do.
             services.RemoveAll<IBasketService>();
             services.RemoveAll<IBasketQueryService>();
             services.AddScoped<IBasketService, ApplicationCore.Services.BasketService>();

@@ -52,7 +52,10 @@ public class IndexTest : IClassFixture<TestApplication>
 
         var stringUpdateResponse = await updateResponse.Content.ReadAsStringAsync();
 
-        Assert.Contains("/basket/update", updateResponse!.RequestMessage!.RequestUri!.ToString()!);
+        // The update handler is Post-Redirect-Get now — SetQuantities is a one-way command with no
+        // basket to render — so the response is the basket page re-read after the redirect, not
+        // the POST's own output.
+        Assert.EndsWith("/Basket", updateResponse!.RequestMessage!.RequestUri!.ToString()!);
         decimal expectedTotalAmount = 416.50M;
         Assert.Contains(expectedTotalAmount.ToString("N2"), stringUpdateResponse);
     }
@@ -92,7 +95,8 @@ public class IndexTest : IClassFixture<TestApplication>
 
         var stringUpdateResponse = await updateResponse.Content.ReadAsStringAsync();
 
-        Assert.Contains("/basket/update", updateResponse!.RequestMessage!.RequestUri!.ToString()!);
+        // See OnPostUpdateTo50Successfully: the update redirects back to the basket page.
+        Assert.EndsWith("/Basket", updateResponse!.RequestMessage!.RequestUri!.ToString()!);
         Assert.Contains("Basket is empty", stringUpdateResponse);
     }
 }

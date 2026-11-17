@@ -1,7 +1,6 @@
 ﻿using Microsoft.eShopWeb.ApplicationCore.Interfaces;
 using Microsoft.eShopWeb.ApplicationCore.Services;
 using Microsoft.eShopWeb.Infrastructure.Data;
-using Microsoft.eShopWeb.Infrastructure.Data.Queries;
 using Microsoft.eShopWeb.Infrastructure.Logging;
 using Microsoft.eShopWeb.Infrastructure.Services;
 
@@ -24,13 +23,25 @@ public static class ConfigureCoreServices
             client.BaseAddress = new Uri(orderServiceBaseUrl);
         });
 
-        // Basket runs in-process again while BasketService's transport is rebuilt on RabbitMQ.
-        // Its REST API is being deleted, so there is nothing left for BasketApiClient to call.
-        // The client and the BasketServiceBaseUrl config key are kept but unregistered: the Web
-        // app is the frontend, so it keeps speaking REST once the gateway is in place — it will
-        // point at the gateway rather than at the service, and the gateway does the publishing.
-        services.AddScoped<IBasketService, ApplicationCore.Services.BasketService>();
-        services.AddScoped<IBasketQueryService, Infrastructure.Data.Queries.BasketQueryService>();
+        // The basket lives in BasketService (BasketService/BasketService), whose only interface is
+        // RabbitMQ. The Web app is the frontend, so it keeps speaking REST: BasketServiceBaseUrl
+        // points at the ApiGateway, which publishes the commands and answers the reads.
+        //
+        // BasketApiClient implements both interfaces, and AddHttpClient<TInterface, TImpl> only
+        // registers the one it is given — so the second resolves the same instance rather than
+        // being a second typed client, which would build a second HttpClient and a second
+        // BasketApiClient per request.
+        services.AddHttpClient<IBasketService, BasketApiClient>(client =>
+        {
+            var basketServiceBaseUrl = configuration["BasketServiceBaseUrl"] ?? "http://localhost:5278/";
+            client.BaseAddress = new Uri(basketServiceBaseUrl);
+        });
+        services.AddScoped<IBasketQueryService>(sp => (BasketApiClient)sp.GetRequiredService<IBasketService>());
+
+        // ApplicationCore.Services.BasketService and Infrastructure.Data.Queries.BasketQueryService
+        // are still a complete in-process basket against CatalogDb, left compiling but unregistered
+        // so the two lines above are the whole cut-over and reversing it is a one-line change. They
+        // go, with the entities and the tables, once this path is verified end to end.
 
         services.AddScoped(typeof(IAppLogger<>), typeof(LoggerAdapter<>));
         services.AddTransient<IEmailSender, EmailSender>();
