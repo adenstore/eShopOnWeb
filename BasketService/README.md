@@ -1,200 +1,207 @@
 # BasketService
 
-The basket microservice. It has **no REST API** — its interface is RabbitMQ. The only HTTP left is
-`/health`.
+Kurvens microservice. Den har **intet REST-API** — dens grænseflade er RabbitMQ. Det eneste HTTP,
+der er tilbage, er `/health`.
 
-That is the required architecture: the frontend talks REST to the API gateway, and everything from
-the gateway inwards, plus all service-to-service traffic, goes over RabbitMQ.
+Det er den påkrævede arkitektur: frontenden taler REST med API-gatewayen, og alt fra gatewayen og
+indad, inklusive al trafik mellem services, går over RabbitMQ.
 
 ```
 Web (frontend)
   │  REST
   ▼
-ApiGateway ──── commands + queries ───▶ exchange "Basket" (topic) ──▶ queue basket-service
-     ▲                                                                      │
-     └──── projection, fed by ◀── exchange "basket-events" (fanout) ◀────────┤
-                                                                            │
-OrderService ──▶ exchange "order-events" (fanout) ──▶ queue basket-order-events
+ApiGateway ──── kommandoer + forespørgsler ───▶ exchange "Basket" (topic) ──▶ kø basket-service
+     ▲                                                                               │
+     └──── projektion, fodret af ◀── exchange "basket-events" (fanout) ◀─────────────┤
+                                                                                     │
+OrderService ──▶ exchange "order-events" (fanout) ─────────────────────▶ kø basket-order-events
 ```
 
-## Topology
+## Topologi
 
-Declared by the service itself on startup (`Messaging/BasketCommandConsumer.cs`), so the broker
-needs no manual setup. All names live in `Contracts/BasketMessaging.cs`.
+Erklæres af servicen selv ved opstart (`Messaging/BasketCommandConsumer.cs`), så brokeren kræver
+ingen manuel opsætning. Alle navne ligger i `Contracts/BasketMessaging.cs`.
 
-| Exchange | Type | Purpose |
+| Exchange | Type | Formål |
 |---|---|---|
-| `Basket` | topic | Commands and queries in. Has `alternate-exchange` → `Basket.unroutable`. |
-| `basket-events` | fanout | `BasketChangedIntegrationEvent` out. |
-| `Basket.invalid` | fanout | Dead-letter target for rejected messages. |
-| `Basket.unroutable` | fanout | Catches messages whose routing key nothing is bound to. |
+| `Basket` | topic | Kommandoer og forespørgsler ind. Har `alternate-exchange` → `Basket.unroutable`. |
+| `basket-events` | fanout | `BasketChangedIntegrationEvent` ud. |
+| `Basket.invalid` | fanout | Dead-letter-mål for afviste beskeder. |
+| `Basket.unroutable` | fanout | Opfanger beskeder, hvis routing key intet er bundet til. |
 
-| Queue | Bound to | Notes |
+| Kø | Bundet til | Noter |
 |---|---|---|
-| `basket-service` | `Basket` on all five routing keys | `x-dead-letter-exchange` → `Basket.invalid`, prefetch 1. |
-| `basket-order-events` | `order-events` | Clears the basket after checkout. |
-| `invalid` | `Basket.invalid` | Inspect this when a message disappears. |
-| `unroutable-messages` | `Basket.unroutable` | A routing key nobody bound — usually a typo. |
+| `basket-service` | `Basket` på alle fem routing keys | `x-dead-letter-exchange` → `Basket.invalid`, prefetch 1. |
+| `basket-order-events` | `order-events` | Tømmer kurven efter checkout. |
+| `invalid` | `Basket.invalid` | Kig her, når en besked forsvinder. |
+| `unroutable-messages` | `Basket.unroutable` | En routing key, ingen har bundet — som regel en tastefejl. |
 
-## Messages
+## Beskeder
 
-Writes are one-way; no caller uses a return value. Add-to-cart is already Post-Redirect-Get, so the
-redirect threw away whatever the old REST call returned.
+Skrivninger er envejs; ingen kalder bruger en returværdi. Læg-i-kurv er i forvejen
+Post-Redirect-Get, så redirectet smed alligevel væk, hvad det gamle REST-kald returnerede.
 
-| Routing key | Message | Reply |
+| Routing key | Besked | Svar |
 |---|---|---|
-| `Basket.addItem` | `AddItemToBasketCommand` | none |
-| `Basket.setQuantities` | `SetBasketQuantitiesCommand` | none |
-| `Basket.transfer` | `TransferBasketCommand` | none |
+| `Basket.addItem` | `AddItemToBasketCommand` | intet |
+| `Basket.setQuantities` | `SetBasketQuantitiesCommand` | intet |
+| `Basket.transfer` | `TransferBasketCommand` | intet |
 | `Basket.getByBuyer` | `GetBasketByBuyerRequest` | `BasketQueryReply` |
 | `Basket.getById` | `GetBasketByIdRequest` | `BasketQueryReply` |
 
-Everything is JSON serialized with `JsonSerializerDefaults.Web` (camelCase), matching every other
-publisher in the repo.
+Alt serialiseres som JSON med `JsonSerializerDefaults.Web` (camelCase), magen til alle andre
+publishers i repoet.
 
-### Why request/reply exists at all
+### Hvorfor request/reply overhovedet findes
 
-Only for the two reads, and only because checkout is blocked on the answer and staleness there is a
-money bug — wrong items or wrong prices on a real order. It is deliberately *not* used for the
-header item count, which renders on every page: that comes from a projection fed by
-`basket-events`, so a page view costs no round-trip.
+Kun til de to læsninger, og kun fordi checkout er blokeret på svaret, og forældede data dér er en
+fejl, der koster penge — forkerte varer eller forkerte priser på en rigtig ordre. Det bruges
+bevidst *ikke* til antallet af varer i headeren, som renderes på hver eneste side: det kommer fra
+en projektion fodret af `basket-events`, så et sidevisning koster ingen round-trip.
 
-Commands and queries deliberately share one queue. A queue is FIFO and `basket-service` has a
-single consumer with prefetch 1, so a query published after a command is handled after it. That is
-what makes "I added an item, now show me my basket" correct without any version-stamping or waiting
-on the read side.
+Kommandoer og forespørgsler deler bevidst én kø. En kø er FIFO, og `basket-service` har én enkelt
+consumer med prefetch 1, så en forespørgsel, der publiceres efter en kommando, behandles efter den.
+Det er dét, der gør "jeg lagde en vare i kurven, vis mig så min kurv" korrekt uden nogen form for
+versionsstempling eller venten på læsesiden.
 
-### `BasketChanged` carries full state, not deltas
+### `BasketChanged` bærer hele tilstanden, ikke deltaer
 
-A fanout gives neither global ordering nor exactly-once delivery, so a delta stream would need
-both. Full state is idempotent and self-healing: a lost event is repaired by the next one.
+En fanout giver hverken global rækkefølge eller præcis-én-gang-levering, så en strøm af deltaer
+ville kræve begge dele. Hele tilstanden er idempotent og retter sig selv: et tabt event bliver
+repareret af det næste.
 
-A reader should apply an event only if its `occurredAt` is at or after what it already holds for
-that buyer — a redelivery can arrive behind a newer event and would otherwise resurrect stale items.
+En læser bør kun anvende et event, hvis dets `occurredAt` er på eller efter det, læseren allerede
+har for den køber — en genlevering kan ankomme bag et nyere event og ville ellers genoplive
+forældede varer.
 
-A deleted basket is announced as a `BasketChanged` with an empty item list, so a projection needs no
-separate "deleted" case.
+En slettet kurv annonceres som et `BasketChanged` med en tom vareliste, så en projektion ikke
+behøver et separat "slettet"-tilfælde.
 
-### Checkout clears the basket by itself
+### Checkout tømmer selv kurven
 
-The old flow was SetQuantities → CreateOrder → DeleteBasket: three calls across two datastores with
-no atomicity, where a crash could leave an order placed and the basket still full. Instead this
-service subscribes to `order-events` and clears the basket when an order really exists. A
-redelivery is a harmless no-op.
+Det gamle flow var SetQuantities → CreateOrder → DeleteBasket: tre kald på tværs af to datalagre
+uden atomicitet, hvor et nedbrud kunne efterlade en oprettet ordre og en stadig fyldt kurv. I
+stedet abonnerer denne service på `order-events` og tømmer kurven, når en ordre rent faktisk
+findes. En genlevering er en harmløs no-op.
 
-## Error handling
+## Fejlhåndtering
 
-There is no caller to return a 400 to, so:
+Der er ingen kalder at returnere en 400 til, så:
 
-- **Malformed JSON or failed validation** → rejected, no requeue, lands on `invalid`.
-  `MessageValidator` runs the DataAnnotations by hand; nothing invokes them for a queue consumer
-  the way `[ApiController]` did for a controller.
-- **A query that fails validation** still gets a reply, with `error` set — the caller is blocked
-  waiting and would otherwise just time out.
-- **An unhandled exception** → rejected without requeue. Redelivering a half-applied command would
-  re-apply the committed part, and a deterministic failure would spin forever.
-- **A publish failure on `basket-events`** is logged, not retried: the change is already committed,
-  and replaying `AddItem` would add the quantity twice. The cost is a stale projection until that
-  basket next changes. An outbox table is the fix if that ever shows up.
-- **A broker that is not up yet** is retried with a doubling backoff rather than being fatal. An
-  exception out of `BackgroundService.ExecuteAsync` stops the entire host by default, so a missing
-  broker used to kill the service outright — `/health` included, leaving nothing to report why.
-  `depends_on` in compose waits for the container to start, not for RabbitMQ to finish booting, so
-  that race is routine. Once attached, RabbitMQ.Client recovers dropped connections, channels and
-  consumers by itself.
+- **Ugyldig JSON eller fejlet validering** → afvises, ingen requeue, lander på `invalid`.
+  `MessageValidator` kører DataAnnotations i hånden; intet kalder dem for en kø-consumer, sådan som
+  `[ApiController]` gjorde for en controller.
+- **En forespørgsel, der fejler validering**, får stadig et svar, med `error` sat — kalderen venter
+  blokeret og ville ellers bare løbe ud i en timeout.
+- **En uhåndteret exception** → afvises uden requeue. At genlevere en halvt anvendt kommando ville
+  genanvende den del, der allerede er committet, og en deterministisk fejl ville køre i ring for
+  evigt.
+- **En fejlet publish på `basket-events`** logges, men prøves ikke igen: ændringen er allerede
+  committet, og at afspille `AddItem` igen ville lægge antallet i kurven to gange. Prisen er en
+  forældet projektion, indtil den kurv ændres næste gang. En outbox-tabel er løsningen, hvis det
+  nogensinde bliver et problem.
+- **En broker, der ikke er oppe endnu**, prøves igen med fordoblende backoff i stedet for at være
+  fatal. En exception ud af `BackgroundService.ExecuteAsync` stopper som udgangspunkt hele hosten,
+  så en manglende broker plejede at slå servicen helt ihjel — `/health` inklusive, så der ikke var
+  noget tilbage til at fortælle hvorfor. `depends_on` i compose venter på, at containeren starter,
+  ikke på at RabbitMQ bliver færdig med at boote, så det kapløb er helt normalt. Når først
+  forbindelsen er etableret, genopretter RabbitMQ.Client selv tabte forbindelser, kanaler og
+  consumers.
 
-## Calling it: the direct reply-to trap
+## At kalde den: direct reply-to-fælden
 
-With `amq.rabbitmq.reply-to`, the request **must** be published on the same channel that holds the
-reply-to consumer. On any other channel the broker tears the channel down with
-`406 PRECONDITION_FAILED - fast reply consumer does not exist`, and `BasicPublishAsync` does *not*
-throw — so it looks like the request vanished.
+Med `amq.rabbitmq.reply-to` **skal** forespørgslen publiceres på den samme kanal, som holder
+reply-to-consumeren. På enhver anden kanal river brokeren kanalen ned med
+`406 PRECONDITION_FAILED - fast reply consumer does not exist`, og `BasicPublishAsync` kaster
+*ikke* — så det ser ud, som om forespørgslen forsvandt.
 
-Use one channel per in-flight request, or one long-lived channel that both publishes requests and
-consumes replies.
+Brug én kanal pr. forespørgsel undervejs, eller én langtidslevende kanal, der både publicerer
+forespørgsler og modtager svar.
 
-## Running it
+## At køre den
 
 ```sh
 docker compose up -d rabbitmq sqlserver
 dotnet run --project BasketService/BasketService
 ```
 
-The service creates `Microsoft.eShopOnWeb.BasketDb` and applies its migrations itself on startup, so
-there is no `dotnet ef database update` step — and nothing is left depending on someone having
-remembered to run one. It happens before `app.Run()`, which is what starts the consumers, so this
-service never consumes a command it cannot commit; a command is one-way, so one that failed on a
-missing table would be dead-lettered to `invalid` with nobody left to tell.
+Servicen opretter selv `Microsoft.eShopOnWeb.BasketDb` og kører sine migrations ved opstart, så der
+er ikke noget `dotnet ef database update`-trin — og intet afhænger af, at nogen huskede at køre et.
+Det sker før `app.Run()`, som er dét, der starter consumerne, så denne service forbruger aldrig en
+kommando, den ikke kan committe; en kommando er envejs, så en, der fejlede på en manglende tabel,
+ville blive dead-letteret til `invalid` uden nogen tilbage at fortælle det til.
 
-It retries for up to two minutes while waiting for SQL Server. That is not belt-and-braces:
-`compose up` returns as soon as the *container* has started, and the `azure-sql-edge` image takes
-around 40 seconds after that to accept connections, during which the TCP pre-login handshake fails
-in a way `EnableRetryOnFailure()` does not treat as transient. Without the retry the service died on
-startup. See `Data/DatabaseMigrator.cs`.
+Den prøver igen i op til to minutter, mens den venter på SQL Server. Det er ikke livrem og seler:
+`compose up` returnerer, så snart *containeren* er startet, og `azure-sql-edge`-imaget bruger cirka
+40 sekunder derefter på at tage imod forbindelser, hvor TCP'ens pre-login-handshake fejler på en
+måde, som `EnableRetryOnFailure()` ikke behandler som forbigående. Uden den retry døde servicen
+under opstart. Se `Data/DatabaseMigrator.cs`.
 
-To add a migration (the `--startup-project` is required — the repo-root `docker-compose.dcproj`
-otherwise makes `dotnet-ef` crash on an empty `frameworkName`):
+Sådan tilføjer du en migration (`--startup-project` er påkrævet — ellers får `docker-compose.dcproj`
+i repoets rod `dotnet-ef` til at crashe på et tomt `frameworkName`):
 
 ```sh
-dotnet ef migrations add <Name> --project BasketService/BasketService --startup-project BasketService/BasketService
+dotnet ef migrations add <Navn> --project BasketService/BasketService --startup-project BasketService/BasketService
 ```
 
-The `nix develop` shell exports `ConnectionStrings__BasketConnection` and the RabbitMQ credentials.
-Both matter:
+Når du kører servicen lokalt, skal du selv sætte `ConnectionStrings__BasketConnection` og
+RabbitMQ-brugeroplysningerne som environment variables. Begge dele betyder noget:
 
-- `appsettings.json` still points at `(localdb)\mssqllocaldb`, which does not exist on Linux.
-- Setting `RABBITMQ_DEFAULT_USER` in `docker-compose.yml` *replaces* the `guest` account rather than
-  adding to it, so the `guest`/`guest` default in `appsettings.json` cannot authenticate against
-  that broker at all. Use `eshop`/`eshop`.
+- `appsettings.json` peger stadig på `(localdb)\mssqllocaldb`, som ikke findes på Linux.
+- At sætte `RABBITMQ_DEFAULT_USER` i `docker-compose.yml` *erstatter* `guest`-kontoen i stedet for
+  at lægge til, så `guest`/`guest`-standarden i `appsettings.json` slet ikke kan autentificere mod
+  den broker. Brug `eshop`/`eshop`.
 
-In compose the service is `eshopbasketservice`, with `/health` on port 5198.
+I compose hedder servicen `eshopbasketservice`, med `/health` på port 5198.
 
-Watch it work in the management UI at <http://localhost:15672> (`eshop`/`eshop`): bind a scratch
-queue to `basket-events` to see the events, and check `invalid` when a message goes missing.
+Følg med i hvad der sker i management-UI'et på <http://localhost:15672> (`eshop`/`eshop`): bind en
+midlertidig kø til `basket-events` for at se eventene, og tjek `invalid`, når en besked forsvinder.
 
 ## Tests
 
-Two projects, at two levels of the test pyramid.
+To projekter, på to niveauer af testpyramiden.
 
-**`BasketService.Tests` — 48 tests, no broker, milliseconds.** Every message rule lives in
-`Messaging/BasketMessageHandler.cs`, which has no AMQP in it; the consumers above it are pure
-transport. That split is what keeps the rules reachable without infrastructure.
-`Contracts/WireFormatTests.cs` round-trips each message shape, including
-`OrderCreatedIntegrationEvent` from OrderService's own contracts assembly, because a shape that does
-not round-trip fails at runtime on a queue where there is no compiler to catch it.
+**`BasketService.Tests` — 48 tests, ingen broker, millisekunder.** Alle beskedregler ligger i
+`Messaging/BasketMessageHandler.cs`, som ikke har AMQP i sig; consumerne ovenover den er ren
+transport. Netop den opdeling er dét, der holder reglerne tilgængelige uden infrastruktur.
+`Contracts/WireFormatTests.cs` round-tripper hver beskedtype, inklusive
+`OrderCreatedIntegrationEvent` fra OrderServices eget contracts-assembly, fordi en type, der ikke
+round-tripper, fejler ved kørsel på en kø, hvor der ingen compiler er til at fange det.
 
-**`BasketService.IntegrationTests` — 15 tests, real RabbitMQ, ~15s. Needs Docker.** Testcontainers
-starts an actual broker on a random port and `WebApplicationFactory` runs the service against it,
-with only the database faked. These cover what a unit test cannot: that messages actually route,
-that rejected ones reach the dead-letter queue, that an unroutable key is caught by the alternate
-exchange, and that request/reply works over the broker rather than over a method call.
+**`BasketService.IntegrationTests` — 15 tests, rigtig RabbitMQ, ~15 s. Kræver Docker.**
+Testcontainers starter en ægte broker på en tilfældig port, og `WebApplicationFactory` kører
+servicen mod den, hvor kun databasen er fakede. De dækker det, en unit test ikke kan: at beskeder
+rent faktisk bliver routet, at afviste beskeder når dead-letter-køen, at en uroutbar key fanges af
+den alternative exchange, og at request/reply virker over brokeren frem for over et metodekald.
 
-Because messaging is not request/response, those tests assert through `PolledWait` — a Polly retry
-that re-checks until the assertion holds. Asserting immediately after a publish would measure the
-speed of the machine, not the behaviour of the service: green on a laptop, flaky in CI.
+Fordi messaging ikke er request/response, asserterer de tests gennem `PolledWait` — en Polly-retry,
+der tjekker igen, indtil assertionen holder. At assertere umiddelbart efter en publish ville måle
+maskinens hastighed, ikke servicens opførsel: grøn på en bærbar, ustabil i CI.
 
 ```sh
-dotnet test BasketService/BasketService.Tests              # always
-dotnet test BasketService/BasketService.IntegrationTests   # needs a container runtime
+dotnet test BasketService/BasketService.Tests              # altid
+dotnet test BasketService/BasketService.IntegrationTests   # kræver en container-runtime
 ```
 
-## Still to do
+## Mangler stadig
 
-- **No automated end-to-end test of the real stack.** The cut-over was verified by hand on
-  2026-11-17 — several items at different quantities added and checked out against a rebuilt
-  compose stack — and the monolith's basket was deleted on the strength of that run. What is still
-  missing is a *test*: the suite is green and
-  `tests/UnitTests/Infrastructure/Services/BasketApiClientTests.cs` pins the REST contract the Web
-  app sends, but the functional tests substitute `FakeBasketApiClient`, so nothing drives REST in
-  at the frontend and asserts a basket comes back out of a real broker and a real service. The
-  fake deliberately applies writes synchronously, so it cannot catch a lost read-your-own-writes
-  guarantee — that is where the gap bites.
-- This service's own `Interfaces/IBasketQueryService.cs` / `Data/Queries/BasketQueryService.cs` are
-  unreachable: the item count rides along on `BasketSnapshot.TotalItems` so that readers need no
-  second round-trip. Left in place rather than deleted as part of a transport change.
-- Denormalising product name and picture onto `BasketSnapshot` would let the Web layer stop reading
-  catalog tables to render a basket, but it needs a catalog projection in this service fed by
-  `catalog-events`, plus a decision about what happens to an item already in someone's basket when
-  the catalog deletes it. Adding those fields later is additive, not breaking.
-- `/health` currently verifies nothing — not the database, not the broker connection. For a service
-  whose real interface is a queue, a check that it is actually consuming would be worth more.
+- **Ingen automatiseret end-to-end-test af den rigtige stak.** Cut-over blev verificeret i hånden
+  den 17. november 2026 — flere varer i forskellige antal lagt i kurven og gennemført køb mod en
+  genbygget compose-stak — og monolittens kurv blev slettet på baggrund af den kørsel. Det, der
+  stadig mangler, er en *test*: suiten er grøn, og
+  `tests/UnitTests/Infrastructure/Services/BasketApiClientTests.cs` låser den REST-kontrakt fast,
+  som Web-appen sender, men de funktionelle tests indsætter `FakeBasketApiClient`, så intet sender
+  REST ind i frontenden og asserterer, at en kurv kommer ud af en rigtig broker og en rigtig
+  service. Faken anvender bevidst skrivninger synkront, så den kan ikke fange en tabt
+  read-your-own-writes-garanti — og det er dér, hullet gør ondt.
+- Denne services egne `Interfaces/IBasketQueryService.cs` / `Data/Queries/BasketQueryService.cs` er
+  uopnåelige: antallet af varer følger med på `BasketSnapshot.TotalItems`, så læsere ikke behøver
+  en ekstra round-trip. Efterladt frem for slettet som led i en transportændring.
+- At denormalisere produktnavn og billede ind på `BasketSnapshot` ville lade Web-laget holde op med
+  at læse katalogtabeller for at rendere en kurv, men det kræver en katalogprojektion i denne
+  service fodret af `catalog-events`, plus en beslutning om, hvad der sker med en vare, der
+  allerede ligger i nogens kurv, når kataloget sletter den. At tilføje de felter senere er
+  additivt, ikke brydende.
+- `/health` verificerer i dag ingenting — hverken databasen eller brokerforbindelsen. For en
+  service, hvis egentlige grænseflade er en kø, ville et tjek af, at den faktisk forbruger
+  beskeder, være mere værd.
